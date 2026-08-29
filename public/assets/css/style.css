@@ -360,10 +360,10 @@ p { margin-bottom: 1rem; }
 
 .hero-bg {
   position: absolute;
-  inset: -10%;
+  inset: 0;
   background-size: cover;
   background-position: center;
-  transition: transform 0.1s ease-out;
+  
 }
 
 .hero-overlay {

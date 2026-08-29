@@ -25,10 +25,6 @@
       nav.classList.remove('scrolled');
     }
     
-    // Parallax hero background
-    const heroBg = document.querySelector('.hero-bg');
-    if (heroBg && currentScroll < window.innerHeight) {
-      heroBg.style.transform = `translateY(${currentScroll * 0.4}px) scale(1.1)`;
     }
     
     // Fade hero content on scroll
