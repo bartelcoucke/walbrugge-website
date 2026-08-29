@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  
+  <!-- Homepage -->
+  <url>
+    <loc>https://walbrugge.be/</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://walbrugge.be/assets/img/hero.jpg</image:loc>
+      <image:title>Domein Walbrugge - Luchtfoto</image:title>
+    </image:image>
+  </url>
+  
+  <!-- Feestzaal -->
+  <url>
+    <loc>https://walbrugge.be/feestzaal</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://walbrugge.be/assets/img/feestzaal.jpg</image:loc>
+      <image:title>Feestzaal Walbrugge</image:title>
+    </image:image>
+  </url>
+  
+  <!-- B&B -->
+  <url>
+    <loc>https://walbrugge.be/bb</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://walbrugge.be/assets/img/bb-header.jpg</image:loc>
+      <image:title>B&amp;B Kamers Walbrugge</image:title>
+    </image:image>
+  </url>
+  
+  <!-- B&B Kamers -->
+  <url>
+    <loc>https://walbrugge.be/bb/campanula</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/bb/chicory-ast</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/bb/cornus-mas</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/bb/eucalyptus</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/bb/kardoen</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Zakelijk -->
+  <url>
+    <loc>https://walbrugge.be/zakelijk</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+    <image:image>
+      <image:loc>https://walbrugge.be/assets/img/zakelijk-hero.jpg</image:loc>
+      <image:title>Vergaderlocatie Walbrugge</image:title>
+    </image:image>
+  </url>
+  
+  <url>
+    <loc>https://walbrugge.be/zakelijk/ruimtes</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://walbrugge.be/zakelijk/formules</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  
+  <url>
+    <loc>https://walbrugge.be/zakelijk/teambuilding</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Over ons -->
+  <url>
+    <loc>https://walbrugge.be/over-ons</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://walbrugge.be/over-ons/voedselbos</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <!-- Contact & Offerte -->
+  <url>
+    <loc>https://walbrugge.be/contact</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://walbrugge.be/offerte</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Privacy -->
+  <url>
+    <loc>https://walbrugge.be/privacy</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+</urlset>

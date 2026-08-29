@@ -1,0 +1,18 @@
+[Unit]
+Description=Walbrugge Website Backend
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/walbrugge/backend
+ExecStart=/usr/bin/node /opt/walbrugge/backend/server.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=8100
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

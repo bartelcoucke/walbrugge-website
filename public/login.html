@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inloggen · Domein Walbrugge</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="/assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--linen); padding: 40px 20px; }
+.login-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: 0 8px 32px var(--shadow); padding: 48px; max-width: 440px; width: 100%; }
+.login-logo { text-align: center; margin-bottom: 32px; }
+.login-logo img { height: 50px; }
+.login-title { text-align: center; font-size: 1.5rem; margin-bottom: 8px; }
+.login-sub { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+.login-tabs { display: flex; gap: 8px; margin-bottom: 32px; }
+.login-tab { flex: 1; padding: 12px; text-align: center; border: none; background: var(--linen); border-radius: var(--radius); cursor: pointer; font-weight: 500; color: var(--muted); transition: all var(--transition); }
+.login-tab.active { background: var(--green); color: var(--white); }
+.login-tab:hover:not(.active) { background: var(--linen-dark); }
+.login-form { display: none; }
+.login-form.active { display: block; }
+.login-msg { text-align: center; margin-top: 16px; font-size: 0.9rem; padding: 12px; border-radius: var(--radius); }
+.login-msg.error { background: #fee; color: #a33; }
+.login-msg.success { background: #efe; color: var(--green); }
+.login-footer { text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--muted); }
+.login-footer a { color: var(--green); }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; color: var(--green-dark); }
+.form-group input { width: 100%; padding: 14px 18px; border: 1.5px solid var(--linen-dark); border-radius: var(--radius); font-size: 1rem; transition: border var(--transition); }
+.form-group input:focus { outline: none; border-color: var(--gold); }
+.btn-full { width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <a href="/"><img src="/assets/img/logo.png" alt="Domein Walbrugge"></a>
+    </div>
+    
+    <h1 class="login-title">Inloggen</h1>
+    <p class="login-sub">Kies hieronder hoe u wilt inloggen</p>
+    
+    <div class="login-tabs">
+      <button class="login-tab active" data-tab="guest">Gast</button>
+      <button class="login-tab" data-tab="admin">Beheerder</button>
+    </div>
+    
+    <!-- Guest Login Form -->
+    <form id="guestForm" class="login-form active">
+      <div class="form-group">
+        <label for="guestEmail">E-mailadres</label>
+        <input type="email" id="guestEmail" name="email" required placeholder="naam@voorbeeld.be">
+      </div>
+      <div class="form-group">
+        <label for="guestRef">Boekingsreferentie</label>
+        <input type="text" id="guestRef" name="reference" required placeholder="WB-XXXXXX">
+      </div>
+      <button type="submit" class="btn btn-gold btn-lg btn-full">Inloggen als gast</button>
+      <div id="guestMsg" class="login-msg" style="display:none;"></div>
+    </form>
+    
+    <!-- Admin Login Form -->
+    <form id="adminForm" class="login-form">
+      <div class="form-group">
+        <label for="adminEmail">E-mailadres</label>
+        <input type="email" id="adminEmail" name="email" required placeholder="admin@walbrugge.be">
+      </div>
+      <div class="form-group">
+        <label for="adminPass">Wachtwoord</label>
+        <input type="password" id="adminPass" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-green btn-lg btn-full">Inloggen</button>
+      <div id="adminMsg" class="login-msg" style="display:none;"></div>
+    </form>
+    
+    <div class="login-footer">
+      <a href="/">← Terug naar de website</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.login-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.tab + 'Form').classList.add('active');
+  });
+});
+
+// Check if already logged in
+const token = sessionStorage.getItem('wb_token');
+if (token) {
+  fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token }})
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok && data.user) {
+        window.location.href = data.user.role === 'admin' ? '/admin' : '/gasten/dashboard';
+      }
+    });
+}
+
+// Guest login
+document.getElementById('guestForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('guestMsg');
+  msg.style.display = 'none';
+  
+  const email = document.getElementById('guestEmail').value;
+  const reference = document.getElementById('guestRef').value;
+  
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, reference })
+    });
+    const data = await res.json();
+    
+    if (data.ok && data.token) {
+      sessionStorage.setItem('wb_token', data.token);
+      sessionStorage.setItem('wb_user', JSON.stringify(data.user));
+      window.location.href = data.redirect || '/gasten/dashboard';
+    } else {
+      msg.textContent = data.error || 'Inloggen mislukt';
+      msg.className = 'login-msg error';
+      msg.style.display = 'block';
+    }
+  } catch (e) {
+    msg.textContent = 'Verbindingsfout. Probeer opnieuw.';
+    msg.className = 'login-msg error';
+    msg.style.display = 'block';
+  }
+});
+
+// Admin login
+document.getElementById('adminForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('adminMsg');
+  msg.style.display = 'none';
+  
+  const email = document.getElementById('adminEmail').value;
+  const password = document.getElementById('adminPass').value;
+  
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    
+    if (data.ok && data.token) {
+      sessionStorage.setItem('wb_token', data.token);
+      sessionStorage.setItem('wb_user', JSON.stringify(data.user));
+      window.location.href = data.redirect || '/admin';
+    } else {
+      msg.textContent = data.error || 'Inloggen mislukt';
+      msg.className = 'login-msg error';
+      msg.style.display = 'block';
+    }
+  } catch (e) {
+    msg.textContent = 'Verbindingsfout. Probeer opnieuw.';
+    msg.className = 'login-msg error';
+    msg.style.display = 'block';
+  }
+});
+</script>
+
+</body>
+</html>

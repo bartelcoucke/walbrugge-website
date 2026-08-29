@@ -1,0 +1,37 @@
+# Caddyfile for Domein Walbrugge
+# Reverse proxy to Node.js backend
+
+:80 {
+    # Reverse proxy to backend
+    reverse_proxy 127.0.0.1:8100
+
+    # Compression
+    encode gzip zstd
+
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Remove server header
+        -Server
+    }
+
+    # Cache static assets
+    @static {
+        path *.css *.js *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # Log
+    log {
+        output file /var/log/caddy/walbrugge.log
+        format json
+    }
+}
+
+# HTTPS will be auto-configured when domain is pointed
+# walbrugge.be {
+#     reverse_proxy 127.0.0.1:8100
+#     encode gzip zstd
+# }

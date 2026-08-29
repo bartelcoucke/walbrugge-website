@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mijn Boeking · Domein Walbrugge</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="/assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<style>
+.dashboard-page { padding-top: 100px; min-height: 100vh; background: var(--linen); }
+.dashboard-header { text-align: center; margin-bottom: 40px; }
+.dashboard-header h1 { font-size: 2rem; margin-bottom: 8px; }
+.dashboard-header p { color: var(--muted); }
+.dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; max-width: 1000px; margin: 0 auto; }
+.booking-card { background: var(--white); border-radius: var(--radius-lg); padding: 32px; box-shadow: 0 4px 24px var(--shadow); }
+.booking-card h2 { font-size: 1.3rem; margin-bottom: 24px; border-bottom: 1px solid var(--linen); padding-bottom: 16px; }
+.booking-detail { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--linen); }
+.booking-detail:last-child { border: none; }
+.booking-detail .label { color: var(--muted); font-size: 0.9rem; }
+.booking-detail .value { font-weight: 600; text-align: right; }
+.status-badge { display: inline-block; padding: 6px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+.status-pending { background: #fff3e0; color: #ef6c00; }
+.status-confirmed { background: #e8f5e9; color: #2e7d32; }
+.status-checked-in { background: #e3f2fd; color: #1976d2; }
+.info-card { background: var(--white); border-radius: var(--radius-lg); padding: 24px; box-shadow: 0 4px 24px var(--shadow); }
+.info-card h3 { font-size: 1rem; margin-bottom: 16px; color: var(--green-dark); }
+.info-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+.info-card ul { font-size: 0.9rem; color: var(--ink); }
+.info-card ul li { padding: 8px 0; border-bottom: 1px solid var(--linen); }
+.logout-btn { margin-top: 24px; }
+@media (max-width: 800px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><img src="/assets/img/logo.png" alt="Domein Walbrugge" width="140" height="40"></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="/">Home</a>
+      <a href="/bb">B&B</a>
+      <a href="/contact">Contact</a>
+      <span id="userGreeting" style="margin-left:16px;color:var(--green);font-weight:500;"></span>
+    </nav>
+  </div>
+</header>
+
+<main class="dashboard-page">
+  <div class="container">
+    <div class="dashboard-header">
+      <h1>Welkom bij Walbrugge</h1>
+      <p>Hieronder vindt u de details van uw boeking.</p>
+    </div>
+    
+    <div id="loading" style="text-align:center;padding:48px;">Laden...</div>
+    
+    <div id="content" class="dashboard-grid" style="display:none;">
+      <div class="booking-card">
+        <h2>📅 Boekingsdetails</h2>
+        
+        <div class="booking-detail">
+          <span class="label">Referentie</span>
+          <span class="value" id="bookingRef">-</span>
+        </div>
+        
+        <div class="booking-detail">
+          <span class="label">Status</span>
+          <span class="value"><span class="status-badge status-pending" id="bookingStatus">-</span></span>
+        </div>
+        
+        <div class="booking-detail">
+          <span class="label">Check-in</span>
+          <span class="value" id="bookingCheckIn">-</span>
+        </div>
+        
+        <div class="booking-detail">
+          <span class="label">Check-out</span>
+          <span class="value" id="bookingCheckOut">-</span>
+        </div>
+        
+        <div class="booking-detail">
+          <span class="label">Kamer</span>
+          <span class="value" id="bookingRoom">-</span>
+        </div>
+        
+        <div class="booking-detail">
+          <span class="label">Aantal personen</span>
+          <span class="value" id="bookingPersons">-</span>
+        </div>
+        
+        <div class="booking-detail">
+          <span class="label">Naam</span>
+          <span class="value" id="bookingName">-</span>
+        </div>
+      </div>
+      
+      <div>
+        <div class="info-card" style="margin-bottom:24px;">
+          <h3>ℹ️ Praktische info</h3>
+          <ul>
+            <li><strong>Check-in:</strong> vanaf 15:00</li>
+            <li><strong>Check-out:</strong> vóór 11:00</li>
+            <li><strong>Ontbijt:</strong> 08:00 - 10:00</li>
+            <li><strong>Parking:</strong> gratis op het domein</li>
+            <li><strong>WiFi:</strong> wachtwoord bij aankomst</li>
+          </ul>
+        </div>
+        
+        <div class="info-card">
+          <h3>📞 Contact</h3>
+          <p>Heeft u vragen over uw verblijf?</p>
+          <p>
+            <strong>Telefoon:</strong> <a href="tel:+3256776132">+32 56 77 61 32</a><br>
+            <strong>Email:</strong> <a href="mailto:info@walbrugge.be">info@walbrugge.be</a>
+          </p>
+        </div>
+        
+        <button class="btn btn-outline btn-full logout-btn" onclick="logout()">Uitloggen</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const token = sessionStorage.getItem('wb_token');
+const user = JSON.parse(sessionStorage.getItem('wb_user') || '{}');
+
+if (!token) {
+  window.location.href = '/login';
+}
+
+document.getElementById('userGreeting').textContent = user.name ? `Hallo, ${user.name}` : '';
+
+async function loadBooking() {
+  try {
+    const res = await fetch('/api/bookings/mine', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    
+    if (data.ok && data.booking) {
+      const b = data.booking;
+      
+      document.getElementById('bookingRef').textContent = b.reference;
+      document.getElementById('bookingName').textContent = b.guest_name;
+      document.getElementById('bookingRoom').textContent = b.room || 'Wordt toegewezen';
+      document.getElementById('bookingPersons').textContent = b.persons || '-';
+      
+      const statusEl = document.getElementById('bookingStatus');
+      statusEl.textContent = b.status;
+      statusEl.className = 'status-badge status-' + b.status;
+      
+      if (b.check_in) {
+        document.getElementById('bookingCheckIn').textContent = new Date(b.check_in).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      }
+      if (b.check_out) {
+        document.getElementById('bookingCheckOut').textContent = new Date(b.check_out).toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      }
+      
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'grid';
+    } else {
+      document.getElementById('loading').innerHTML = '<p>Geen boeking gevonden. <a href="/login">Opnieuw inloggen</a></p>';
+    }
+  } catch (e) {
+    document.getElementById('loading').innerHTML = '<p>Er ging iets mis. <a href="/login">Opnieuw inloggen</a></p>';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('wb_token');
+  sessionStorage.removeItem('wb_user');
+  window.location.href = '/';
+}
+
+loadBooking();
+</script>
+
+<script src="/assets/js/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# Robots.txt for Domein Walbrugge
+# https://walbrugge.be
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://walbrugge.be/sitemap.xml
+
+# Disallow admin and login areas
+Disallow: /admin
+Disallow: /login
+Disallow: /api/
+
+# Allow search engines to crawl all public content
+Allow: /feestzaal
+Allow: /bb
+Allow: /zakelijk
+Allow: /over-ons
+Allow: /contact
+Allow: /offerte
+
+# Crawl-delay for politeness
+Crawl-delay: 1
