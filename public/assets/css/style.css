@@ -368,6 +368,18 @@ p { margin-bottom: 1rem; }
   
 }
 
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-video { display: none; }
+}
+
 .hero-overlay {
   position: absolute;
   inset: 0;
