@@ -1668,10 +1668,10 @@ a.hero-award-badge:hover {
   white-space: nowrap;
 }
 
-.hero-award-booking .booking-wordmark {
-  color: #003b95;
-  font-weight: 700;
-  font-size: 0.95rem;
+.booking-logo {
+  height: 26px;
+  width: auto;
+  border-radius: 5px;
 }
 
 .booking-text {
