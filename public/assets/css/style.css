@@ -1662,13 +1662,6 @@ a.hero-award-badge:hover {
   color: var(--gold-dark);
 }
 
-.hero-award-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1.2;
-}
-
 .hero-award-caption {
   font-size: 0.68rem;
   color: var(--muted);
@@ -1681,15 +1674,32 @@ a.hero-award-badge:hover {
   font-size: 0.95rem;
 }
 
+.booking-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.booking-word {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
 .booking-score {
   background: #003b95;
   color: #fff;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1;
-  padding: 6px 7px;
+  padding: 8px 7px;
   border-radius: 6px 6px 6px 0;
-  margin-bottom: 2px;
+}
+
+.ep-logo {
+  height: 18px;
+  width: auto;
 }
 
 @media (max-width: 768px) {

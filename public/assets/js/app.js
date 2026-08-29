@@ -250,6 +250,17 @@
   `;
   document.head.appendChild(shakeStyle);
 
+  // ── Booking.com link in de taal van de pagina ──────────────────────────────
+  const bookingBadge = document.getElementById('bookingBadge');
+  if (bookingBadge) {
+    const lang = (document.documentElement.lang || 'nl').split('-')[0];
+    const bookingLangs = { nl: 'nl', fr: 'fr', de: 'de', en: 'en-gb' };
+    const suffix = bookingLangs[lang];
+    bookingBadge.href = suffix
+      ? 'https://www.booking.com/hotel/be/walbrugge.' + suffix + '.html'
+      : 'https://www.booking.com/hotel/be/walbrugge.html';
+  }
+
   // ── Console branding ───────────────────────────────────────────────────────
   console.log(
     '%c🏡 Domein Walbrugge',
