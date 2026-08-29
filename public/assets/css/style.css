@@ -2063,3 +2063,237 @@ a.award-card:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FEESTEN PAGE - Slider & Sections
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.feest-section {
+  padding: 80px 0;
+}
+
+.feest-block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.feest-reverse {
+  direction: rtl;
+}
+
+.feest-reverse > * {
+  direction: ltr;
+}
+
+/* Slider */
+.feest-slider {
+  position: relative;
+}
+
+.slider-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px var(--shadow-lg);
+}
+
+.slider-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.slide {
+  min-width: 100%;
+}
+
+.slide img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+.slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.9);
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  color: var(--ink);
+}
+
+.slider-btn:hover {
+  background: var(--gold);
+  color: #fff;
+}
+
+.slider-prev { left: 16px; }
+.slider-next { right: 16px; }
+
+.slider-dots {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.slider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.slider-dot.active {
+  background: var(--gold);
+  transform: scale(1.2);
+}
+
+/* Feest Content */
+.feest-content {
+  padding: 20px 0;
+}
+
+.feest-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.feest-content h2 {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.feest-tagline {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--gold-dark);
+  margin-bottom: 20px;
+}
+
+.feest-content p {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.feest-features {
+  margin: 24px 0;
+}
+
+.feest-features li {
+  padding: 10px 0 10px 32px;
+  position: relative;
+  border-bottom: 1px solid var(--linen-dark);
+}
+
+.feest-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.feest-features li:last-child {
+  border: none;
+}
+
+.feest-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 24px 0;
+}
+
+.feest-type {
+  background: var(--gold-light);
+  color: var(--green-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
+/* Praktisch Grid */
+.praktisch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.praktisch-item {
+  text-align: center;
+  padding: 24px;
+}
+
+.praktisch-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.praktisch-item h4 {
+  color: var(--gold-light);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.praktisch-item p {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .feest-block {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  .feest-reverse {
+    direction: ltr;
+  }
+  
+  .slide img {
+    height: 300px;
+  }
+  
+  .praktisch-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .praktisch-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .feest-content h2 {
+    font-size: 1.6rem;
+  }
+  
+  .slide img {
+    height: 250px;
+  }
+}
