@@ -1,67 +1,127 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   WALBRUGGE - Main Stylesheet
-   SEO-optimized, responsive, fast-loading
+   WALBRUGGE - Rustieke Hoeve Editie
+   Warm, authentiek, uitnodigend
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Variables ────────────────────────────────────────────────────────────── */
+/* ── Variables - Rustiek Kleurenpalet ─────────────────────────────────────── */
 :root {
-  --green: #4a6b3c;
-  --green-dark: #1f3517;
-  --green-light: #5a7d4a;
-  --gold: #c9a84c;
-  --gold-dark: #b8973e;
-  --gold-light: #d4b85c;
-  --linen: #f5f1eb;
-  --linen-dark: #e8e2d9;
-  --ink: #2b211b;
-  --muted: #7a7068;
-  --white: #ffffff;
-  --shadow: rgba(31, 53, 23, 0.1);
-  --shadow-lg: rgba(31, 53, 23, 0.15);
-  --radius: 12px;
-  --radius-lg: 20px;
-  --transition: 0.25s ease;
-  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  /* Aardse groentinten */
+  --green: #5c7a4a;
+  --green-dark: #2d3a28;
+  --green-light: #7a9968;
+  --green-muted: #8b9b7a;
+  
+  /* Warme goud/brons tinten */
+  --gold: #b8860b;
+  --gold-dark: #8b6914;
+  --gold-light: #d4a84b;
+  --copper: #b87333;
+  
+  /* Natuurlijke achtergronden */
+  --cream: #faf6f0;
+  --linen: #f3ebe0;
+  --linen-dark: #e6ddd0;
+  --parchment: #f5f0e6;
+  --wood: #8b7355;
+  --wood-dark: #5c4a3d;
+  
+  /* Tekst */
+  --ink: #3d3228;
+  --ink-light: #5a4d40;
+  --muted: #7a6d5d;
+  --white: #fffcf7;
+  
+  /* Schaduwen - warmer */
+  --shadow: rgba(61, 50, 40, 0.08);
+  --shadow-md: rgba(61, 50, 40, 0.12);
+  --shadow-lg: rgba(61, 50, 40, 0.18);
+  --shadow-warm: rgba(184, 134, 11, 0.15);
+  
+  /* Vormen */
+  --radius: 8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  
+  /* Animaties */
+  --transition: 0.3s ease;
+  --transition-slow: 0.6s ease;
+  
+  /* Fonts */
+  --font-serif: 'Cormorant Garamond', 'Palatino Linotype', Georgia, serif;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-accent: 'Cormorant Garamond', Georgia, serif;
 }
 
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
 body {
   font-family: var(--font-sans);
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.7;
   color: var(--ink);
-  background: var(--white);
+  background: var(--cream);
   -webkit-font-smoothing: antialiased;
+  /* Subtiele textuur */
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4c4a8' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
+
 img { max-width: 100%; height: auto; display: block; }
-a { color: inherit; text-decoration: none; }
+a { color: inherit; text-decoration: none; transition: color var(--transition); }
 ul, ol { list-style: none; }
 button { font: inherit; cursor: pointer; border: none; background: none; }
 address { font-style: normal; }
 
-/* ── Typography ───────────────────────────────────────────────────────────── */
+/* ── Typography - Rustiek & Elegant ───────────────────────────────────────── */
 h1, h2, h3, h4 {
   font-family: var(--font-serif);
   font-weight: 600;
   line-height: 1.2;
   color: var(--green-dark);
+  letter-spacing: -0.01em;
 }
-h1 { font-size: clamp(2.2rem, 5vw, 3.5rem); }
-h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); margin-bottom: 1rem; }
-h3 { font-size: clamp(1.3rem, 3vw, 1.6rem); }
-h4 { font-size: 1.1rem; }
+
+h1 { 
+  font-size: clamp(2.5rem, 6vw, 4rem); 
+  font-weight: 500;
+  font-style: italic;
+}
+h2 { 
+  font-size: clamp(2rem, 4.5vw, 2.8rem); 
+  margin-bottom: 1rem; 
+}
+h3 { font-size: clamp(1.4rem, 3vw, 1.8rem); }
+h4 { font-size: 1.2rem; }
 p { margin-bottom: 1rem; }
+
 .kicker {
-  font-size: 0.78rem;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--gold);
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.15em;
+  color: var(--copper);
+  margin-bottom: 0.75rem;
+  display: inline-block;
+  position: relative;
 }
+
+.kicker::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--gold);
+}
+
+.center .kicker::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .center { text-align: center; }
 
 /* ── Layout ───────────────────────────────────────────────────────────────── */
@@ -70,125 +130,225 @@ p { margin-bottom: 1rem; }
   margin: 0 auto;
   padding: 0 24px;
 }
+
 .section {
-  padding: 80px 0;
+  padding: 100px 0;
+  position: relative;
 }
-.section-linen { background: var(--linen); }
-.section-dark { background: var(--green-dark); color: var(--white); }
+
+.section-linen { 
+  background: var(--linen); 
+  background-image: none;
+}
+
+.section-parchment {
+  background: var(--parchment);
+  position: relative;
+}
+
+.section-parchment::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+}
+
+.section-dark { 
+  background: linear-gradient(135deg, var(--green-dark) 0%, var(--wood-dark) 100%);
+  color: var(--white); 
+}
 .section-dark h2, .section-dark h3 { color: var(--white); }
 .section-dark .kicker { color: var(--gold-light); }
+.section-dark .kicker::after { background: var(--gold-light); }
 
-/* ── Buttons ──────────────────────────────────────────────────────────────── */
+/* ── Decoratieve elementen ────────────────────────────────────────────────── */
+.flourish {
+  display: block;
+  width: 60px;
+  height: 20px;
+  margin: 24px auto;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 20'%3E%3Cpath d='M30 10 Q20 0 10 10 Q20 20 30 10 Q40 0 50 10 Q40 20 30 10' fill='none' stroke='%23b8860b' stroke-width='1.5'/%3E%3C/svg%3E") center no-repeat;
+  opacity: 0.7;
+}
+
+/* ── Buttons - Rustiek ────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px 32px;
-  border-radius: 999px;
+  gap: 10px;
+  padding: 16px 36px;
+  border-radius: var(--radius);
+  font-family: var(--font-sans);
   font-weight: 600;
   font-size: 0.9rem;
+  letter-spacing: 0.03em;
   text-decoration: none;
   transition: all var(--transition);
   border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
 }
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
 .btn-gold {
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
   color: var(--white);
+  box-shadow: 0 4px 15px var(--shadow-warm);
 }
+
 .btn-gold:hover {
-  background: var(--gold-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px var(--shadow-warm);
 }
+
 .btn-green {
-  background: var(--green);
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
   color: var(--white);
 }
+
 .btn-green:hover {
-  background: var(--green-light);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(92, 122, 74, 0.3);
 }
+
 .btn-ghost {
   background: transparent;
-  border-color: var(--linen-dark);
+  border: 2px solid var(--linen-dark);
   color: var(--ink);
 }
+
 .btn-ghost:hover {
   border-color: var(--gold);
-  color: var(--gold);
+  color: var(--gold-dark);
+  background: rgba(184, 134, 11, 0.05);
 }
-.btn-lg { padding: 18px 40px; font-size: 1rem; }
 
-/* ── Navigation ───────────────────────────────────────────────────────────── */
+.btn-lg { 
+  padding: 20px 48px; 
+  font-size: 1rem; 
+}
+
+/* ── Navigation - Rustiek ─────────────────────────────────────────────────── */
 .nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(250, 246, 240, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(184, 134, 11, 0.1);
   transition: all var(--transition);
 }
+
 .nav.scrolled {
-  box-shadow: 0 2px 20px var(--shadow);
+  box-shadow: 0 4px 30px var(--shadow);
+  background: rgba(250, 246, 240, 0.98);
 }
+
 .nav-inner {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 18px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.nav-logo img { height: 40px; width: auto; }
+
+.nav-logo img { height: 44px; width: auto; }
+
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 36px;
 }
+
 .nav-links a {
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--ink);
-  transition: color var(--transition);
+  position: relative;
+  padding: 4px 0;
 }
-.nav-links a:hover { color: var(--green); }
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gold);
+  transition: width var(--transition);
+}
+
+.nav-links a:hover { color: var(--green-dark); }
+.nav-links a:hover::after { width: 100%; }
+
 .nav-cta {
-  background: var(--gold) !important;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%) !important;
   color: var(--white) !important;
-  padding: 10px 24px !important;
-  border-radius: 999px !important;
+  padding: 12px 28px !important;
+  border-radius: var(--radius) !important;
 }
-.nav-cta:hover { background: var(--gold-dark) !important; }
+
+.nav-cta::after { display: none !important; }
+
+.nav-cta:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px var(--shadow-warm);
+}
+
 .nav-login {
-  color: var(--gold) !important;
+  color: var(--gold-dark) !important;
   font-weight: 600 !important;
-  padding: 8px 20px !important;
+  padding: 10px 24px !important;
   border: 2px solid var(--gold) !important;
-  border-radius: 999px !important;
+  border-radius: var(--radius) !important;
   margin-left: 8px !important;
 }
+
+.nav-login::after { display: none !important; }
+
 .nav-login:hover {
   background: var(--gold) !important;
   color: var(--white) !important;
 }
+
 .nav-burger {
   display: none;
   flex-direction: column;
   gap: 5px;
   padding: 8px;
 }
+
 .nav-burger span {
-  width: 24px;
+  width: 26px;
   height: 2px;
   background: var(--ink);
   transition: all var(--transition);
+  border-radius: 2px;
 }
 
-/* ── Hero ─────────────────────────────────────────────────────────────────── */
+/* ── Hero - Dramatisch & Rustiek ──────────────────────────────────────────── */
 .hero {
   position: relative;
   min-height: 100vh;
@@ -197,147 +357,240 @@ p { margin-bottom: 1rem; }
   justify-content: center;
   overflow: hidden;
 }
+
 .hero-bg {
   position: absolute;
-  inset: 0;
+  inset: -10%;
   background-size: cover;
   background-position: center;
-  transform: scale(1.05);
+  transition: transform 0.1s ease-out;
 }
+
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(31, 53, 23, 0.4), rgba(31, 53, 23, 0.7));
+  background: linear-gradient(
+    to bottom,
+    rgba(45, 58, 40, 0.3) 0%,
+    rgba(45, 58, 40, 0.5) 50%,
+    rgba(45, 58, 40, 0.7) 100%
+  );
 }
+
+/* Vignet effect */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(45, 58, 40, 0.4) 100%);
+  pointer-events: none;
+}
+
 .hero-content {
   position: relative;
+  z-index: 2;
   text-align: center;
   color: var(--white);
-  padding: 120px 24px 80px;
-  max-width: 900px;
+  padding: 140px 24px 100px;
+  max-width: 950px;
+  animation: fadeInUp 1s ease-out;
 }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .hero-kicker {
-  font-size: 0.85rem;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
   font-weight: 500;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   opacity: 0.9;
+  color: var(--gold-light);
 }
+
 .hero h1 {
   color: var(--white);
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  text-shadow: 0 2px 40px rgba(0, 0, 0, 0.3);
 }
+
 .hero h1 em {
   font-style: italic;
   color: var(--gold-light);
 }
+
 .hero-sub {
-  font-size: 1.15rem;
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-style: italic;
   max-width: 700px;
   margin: 0 auto;
-  opacity: 0.9;
-  line-height: 1.7;
+  opacity: 0.95;
+  line-height: 1.8;
+  color: var(--linen);
 }
+
 .hero-scroll {
   position: absolute;
-  bottom: 40px;
+  bottom: 50px;
   left: 50%;
   transform: translateX(-50%);
-  width: 30px;
-  height: 50px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
+  z-index: 2;
+  width: 32px;
+  height: 54px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 999px;
   display: flex;
   justify-content: center;
-  padding-top: 8px;
-}
-.hero-scroll span {
-  width: 4px;
-  height: 8px;
-  background: var(--white);
-  border-radius: 999px;
-  animation: scroll 1.5s infinite;
-}
-@keyframes scroll {
-  0%, 100% { transform: translateY(0); opacity: 1; }
-  50% { transform: translateY(12px); opacity: 0.3; }
+  padding-top: 10px;
+  animation: pulse 2s infinite;
 }
 
-/* ── Keuze Section (Drieledige splitsing) ─────────────────────────────────── */
-.keuze-section { padding-top: 100px; }
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.hero-scroll span {
+  width: 4px;
+  height: 10px;
+  background: var(--gold-light);
+  border-radius: 999px;
+  animation: scroll 1.8s infinite;
+}
+
+@keyframes scroll {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(14px); opacity: 0.3; }
+}
+
+/* ── Keuze Cards - Rustiek met Hover ──────────────────────────────────────── */
+.keuze-section { 
+  padding-top: 120px; 
+  background: var(--cream);
+}
+
 .keuze-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
+  gap: 36px;
 }
+
 .keuze-card {
   position: relative;
   background: var(--white);
   border-radius: var(--radius-lg);
-  padding: 40px 32px;
-  box-shadow: 0 4px 24px var(--shadow);
-  transition: all var(--transition);
+  padding: 48px 36px;
+  box-shadow: 0 4px 20px var(--shadow);
+  transition: all var(--transition-slow);
   text-align: center;
+  border: 1px solid rgba(184, 134, 11, 0.1);
+  overflow: hidden;
 }
+
+/* Decoratieve hoek */
+.keuze-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--gold-light) 0%, transparent 50%);
+  opacity: 0.3;
+  transition: opacity var(--transition);
+}
+
 .keuze-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 40px var(--shadow-lg);
+  transform: translateY(-12px);
+  box-shadow: 0 20px 50px var(--shadow-lg);
+  border-color: var(--gold);
 }
+
+.keuze-card:hover::before {
+  opacity: 0.5;
+}
+
 .keuze-card-featured {
   border: 2px solid var(--gold);
+  background: linear-gradient(to bottom, var(--white) 0%, rgba(184, 134, 11, 0.03) 100%);
 }
+
 .keuze-badge {
   position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--gold);
+  top: -1px;
+  right: 24px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--copper) 100%);
   color: var(--white);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 6px 16px;
-  border-radius: 999px;
+  padding: 8px 18px;
+  border-radius: 0 0 var(--radius) var(--radius);
 }
+
 .keuze-icon {
-  font-size: 3rem;
+  font-size: 3.5rem;
+  margin-bottom: 24px;
+  filter: grayscale(20%);
+}
+
+.keuze-card h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+
+.keuze-tagline {
+  font-family: var(--font-serif);
+  font-style: italic;
+  color: var(--copper);
+  font-size: 1rem;
   margin-bottom: 20px;
 }
-.keuze-card h2 {
-  font-size: 1.6rem;
-  margin-bottom: 8px;
-}
-.keuze-tagline {
-  color: var(--gold);
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 16px;
-}
+
 .keuze-card > p:not(.keuze-tagline) {
   color: var(--muted);
   font-size: 0.95rem;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  line-height: 1.7;
 }
+
 .keuze-features {
   text-align: left;
-  margin-bottom: 28px;
-  padding-left: 8px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: var(--linen);
+  border-radius: var(--radius);
 }
+
 .keuze-features li {
   position: relative;
-  padding-left: 24px;
-  margin-bottom: 8px;
+  padding-left: 28px;
+  margin-bottom: 10px;
   font-size: 0.9rem;
   color: var(--ink);
 }
+
+.keuze-features li:last-child { margin-bottom: 0; }
+
 .keuze-features li::before {
-  content: '✓';
+  content: '✦';
   position: absolute;
   left: 0;
-  color: var(--green);
-  font-weight: 700;
+  color: var(--gold);
+  font-size: 0.8rem;
 }
 
 /* ── Intro Block ──────────────────────────────────────────────────────────── */
@@ -346,85 +599,125 @@ p { margin-bottom: 1rem; }
   margin: 0 auto;
   text-align: center;
 }
+
 .intro-title {
-  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
-  margin-bottom: 28px;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  margin-bottom: 32px;
+  font-style: italic;
 }
+
 .intro-text {
-  color: var(--muted);
-  font-size: 1.05rem;
-  line-height: 1.8;
-  margin-bottom: 48px;
+  color: var(--ink-light);
+  font-size: 1.1rem;
+  line-height: 1.9;
+  margin-bottom: 56px;
 }
+
+.intro-text p:first-child::first-letter {
+  font-family: var(--font-serif);
+  font-size: 3.5rem;
+  font-weight: 600;
+  float: left;
+  line-height: 1;
+  margin-right: 12px;
+  margin-top: 4px;
+  color: var(--green-dark);
+}
+
 .intro-stats {
   display: flex;
   justify-content: center;
-  gap: 48px;
+  gap: 60px;
   flex-wrap: wrap;
+  padding-top: 40px;
+  border-top: 1px solid var(--linen-dark);
 }
+
 .stat {
   text-align: center;
 }
+
 .stat-num {
   display: block;
   font-family: var(--font-serif);
-  font-size: 2.8rem;
-  font-weight: 700;
+  font-size: 3.2rem;
+  font-weight: 600;
   color: var(--green-dark);
   line-height: 1;
 }
-.stat-num sup { font-size: 0.5em; }
+
+.stat-num sup { font-size: 0.45em; }
+
 .stat-label {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 4px;
+  letter-spacing: 0.08em;
+  margin-top: 8px;
 }
 
-/* ── Testimonials ─────────────────────────────────────────────────────────── */
+/* ── Testimonials - Rustiek ───────────────────────────────────────────────── */
 .testimonials {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
-  margin-top: 48px;
+  gap: 36px;
+  margin-top: 56px;
 }
+
 .testimonial {
-  background: var(--linen);
-  border-radius: var(--radius);
-  padding: 32px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 40px 32px;
   position: relative;
+  box-shadow: 0 4px 20px var(--shadow);
+  border: 1px solid var(--linen-dark);
+  transition: all var(--transition);
 }
+
+.testimonial:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 35px var(--shadow-md);
+  border-color: var(--gold-light);
+}
+
 .testimonial::before {
   content: '"';
   position: absolute;
-  top: 16px;
-  left: 24px;
+  top: 24px;
+  left: 28px;
   font-family: var(--font-serif);
-  font-size: 4rem;
+  font-size: 5rem;
   color: var(--gold);
-  opacity: 0.3;
+  opacity: 0.25;
   line-height: 1;
 }
+
 .testimonial p {
+  font-family: var(--font-serif);
   font-style: italic;
+  font-size: 1.05rem;
   color: var(--ink);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   position: relative;
   z-index: 1;
+  line-height: 1.8;
 }
+
 .testimonial footer {
   border-top: 1px solid var(--linen-dark);
-  padding-top: 16px;
+  padding-top: 20px;
 }
+
 .testimonial footer strong {
   display: block;
   color: var(--green-dark);
   font-weight: 600;
+  font-size: 0.95rem;
 }
+
 .testimonial footer span {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
@@ -433,66 +726,108 @@ p { margin-bottom: 1rem; }
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin-top: 48px;
+  margin-top: 56px;
 }
+
 .ruimte-item {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius);
-  padding: 28px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 32px;
   text-align: center;
   transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
 }
+
+.ruimte-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(184, 134, 11, 0.1) 100%);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
 .ruimte-item:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-6px);
+  border-color: var(--gold-light);
 }
+
+.ruimte-item:hover::before {
+  opacity: 1;
+}
+
 .ruimte-item-featured {
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
   border-color: var(--gold);
 }
+
 .ruimte-cap {
   display: block;
   font-family: var(--font-serif);
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-.ruimte-item strong {
-  display: block;
-  font-size: 1rem;
-  margin-bottom: 4px;
-}
-.ruimte-item span {
-  font-size: 0.82rem;
-  opacity: 0.8;
+  font-size: 3rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
 }
 
-/* ── Facilities ───────────────────────────────────────────────────────────── */
+.ruimte-item strong {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.ruimte-item span {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Facilities - Rustiek ─────────────────────────────────────────────────── */
 .facil {
   background: var(--linen);
-  padding: 48px 0;
+  padding: 60px 0;
+  border-top: 1px solid var(--linen-dark);
+  border-bottom: 1px solid var(--linen-dark);
 }
+
 .facil-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 16px;
+  gap: 20px;
 }
+
 .facil-item {
   text-align: center;
-  padding: 16px;
+  padding: 24px 12px;
+  transition: all var(--transition);
+  border-radius: var(--radius);
 }
+
+.facil-item:hover {
+  background: var(--white);
+  box-shadow: 0 4px 15px var(--shadow);
+}
+
 .facil-ico {
   display: block;
-  font-size: 2rem;
-  margin-bottom: 8px;
+  font-size: 2.2rem;
+  margin-bottom: 12px;
 }
+
 .facil-item strong {
   display: block;
   font-size: 0.85rem;
   color: var(--green-dark);
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
+
 .facil-item span {
   font-size: 0.75rem;
   color: var(--muted);
@@ -500,113 +835,226 @@ p { margin-bottom: 1rem; }
 
 /* ── CTA Section ──────────────────────────────────────────────────────────── */
 .section-cta {
-  background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 100%);
+  background: linear-gradient(135deg, var(--green-dark) 0%, var(--wood-dark) 100%);
   color: var(--white);
+  position: relative;
+  overflow: hidden;
 }
+
+.section-cta::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(184, 134, 11, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
 .cta-block {
   text-align: center;
   max-width: 700px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
+
 .cta-block h2 {
   color: var(--white);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  font-style: italic;
 }
+
 .cta-block p {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   opacity: 0.9;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
+  font-family: var(--font-serif);
 }
+
 .cta-buttons {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   justify-content: center;
   flex-wrap: wrap;
 }
+
 .section-cta .btn-ghost {
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.35);
   color: var(--white);
 }
+
 .section-cta .btn-ghost:hover {
   border-color: var(--white);
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Footer ───────────────────────────────────────────────────────────────── */
+/* ── Footer - Rustiek ─────────────────────────────────────────────────────── */
 .footer {
   background: var(--green-dark);
   color: var(--white);
-  padding: 64px 0 32px;
+  padding: 80px 0 40px;
+  position: relative;
 }
+
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--copper), var(--gold));
+}
+
 .footer-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1.5fr;
-  gap: 48px;
-  margin-bottom: 48px;
+  gap: 56px;
+  margin-bottom: 56px;
 }
+
 .footer-brand img {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  filter: brightness(0) invert(1);
 }
+
 .footer-brand p {
   font-size: 0.9rem;
-  opacity: 0.8;
-  line-height: 1.7;
+  opacity: 0.75;
+  line-height: 1.8;
+  font-family: var(--font-serif);
+  font-style: italic;
 }
+
 .footer h4 {
-  color: var(--gold);
+  color: var(--gold-light);
   font-family: var(--font-sans);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 20px;
+  letter-spacing: 0.1em;
+  margin-bottom: 24px;
 }
+
 .footer-links ul li {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
+
 .footer-links a {
   font-size: 0.9rem;
-  opacity: 0.8;
-  transition: opacity var(--transition);
+  opacity: 0.75;
+  transition: all var(--transition);
 }
-.footer-links a:hover { opacity: 1; }
+
+.footer-links a:hover { 
+  opacity: 1; 
+  color: var(--gold-light);
+  padding-left: 6px;
+}
+
 .footer-contact address {
   font-size: 0.9rem;
-  line-height: 1.8;
-  opacity: 0.8;
+  line-height: 2;
+  opacity: 0.75;
 }
-.footer-contact a:hover { opacity: 1; color: var(--gold); }
+
+.footer-contact a:hover { 
+  opacity: 1; 
+  color: var(--gold-light); 
+}
+
 .footer-social {
   display: flex;
-  gap: 16px;
-  margin-top: 20px;
+  gap: 14px;
+  margin-top: 24px;
 }
+
 .footer-social a {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition);
 }
+
 .footer-social a:hover {
   background: var(--gold);
-  transform: translateY(-3px);
+  border-color: var(--gold);
+  transform: translateY(-4px);
 }
+
 .footer-social svg { width: 18px; height: 18px; }
+
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 24px;
+  padding-top: 28px;
   text-align: center;
-  font-size: 0.82rem;
-  opacity: 0.6;
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+
+/* ── Scroll Reveal Animation ──────────────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered animation for cards */
+.keuze-card:nth-child(1) { transition-delay: 0.1s; }
+.keuze-card:nth-child(2) { transition-delay: 0.2s; }
+.keuze-card:nth-child(3) { transition-delay: 0.3s; }
+
+.testimonial:nth-child(1) { transition-delay: 0.1s; }
+.testimonial:nth-child(2) { transition-delay: 0.2s; }
+.testimonial:nth-child(3) { transition-delay: 0.3s; }
+
+/* ── WhatsApp Button ──────────────────────────────────────────────────────── */
+.whatsapp-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+  z-index: 999;
+  transition: all var(--transition);
+}
+
+.whatsapp-btn:hover {
+  transform: scale(1.1) translateY(-4px);
+  box-shadow: 0 10px 30px rgba(37, 211, 102, 0.5);
+}
+
+.whatsapp-btn svg {
+  width: 34px;
+  height: 34px;
+  fill: #fff;
 }
 
 /* ── Mobile Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .keuze-grid { grid-template-columns: 1fr; max-width: 500px; margin: 0 auto; }
+  .keuze-grid { 
+    grid-template-columns: 1fr; 
+    max-width: 520px; 
+    margin: 0 auto; 
+  }
   .testimonials { grid-template-columns: 1fr; }
   .ruimtes-grid { grid-template-columns: repeat(2, 1fr); }
   .facil-grid { grid-template-columns: repeat(3, 1fr); }
@@ -620,11 +1068,12 @@ p { margin-bottom: 1rem; }
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--white);
+    background: var(--cream);
     flex-direction: column;
-    padding: 24px;
-    gap: 16px;
-    box-shadow: 0 8px 24px var(--shadow);
+    padding: 28px;
+    gap: 20px;
+    box-shadow: 0 12px 30px var(--shadow);
+    border-top: 1px solid var(--linen-dark);
   }
   .nav-links.active { display: flex; }
   .nav-burger { display: flex; }
@@ -632,19 +1081,24 @@ p { margin-bottom: 1rem; }
   .nav-burger.active span:nth-child(2) { opacity: 0; }
   .nav-burger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
   
-  .section { padding: 60px 0; }
-  .hero-content { padding: 100px 20px 60px; }
-  .intro-stats { gap: 24px; }
+  .section { padding: 70px 0; }
+  .hero-content { padding: 120px 20px 80px; }
+  .hero-sub { font-size: 1.1rem; }
+  .intro-stats { gap: 32px; }
+  .intro-text p:first-child::first-letter { font-size: 2.8rem; }
   .ruimtes-grid { grid-template-columns: 1fr; }
   .facil-grid { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr; text-align: center; }
   .footer-social { justify-content: center; }
+  .footer-links a:hover { padding-left: 0; }
 }
 
 @media (max-width: 480px) {
-  .keuze-card { padding: 32px 24px; }
-  .btn-lg { padding: 14px 28px; font-size: 0.9rem; }
+  .keuze-card { padding: 36px 24px; }
+  .btn-lg { padding: 16px 32px; font-size: 0.9rem; }
   .cta-buttons { flex-direction: column; }
+  .whatsapp-btn { bottom: 20px; right: 20px; width: 56px; height: 56px; }
+  .whatsapp-btn svg { width: 28px; height: 28px; }
 }
 
 /* ── Utilities ────────────────────────────────────────────────────────────── */
@@ -661,76 +1115,71 @@ p { margin-bottom: 1rem; }
 
 /* ── Page-specific styles ─────────────────────────────────────────────────── */
 .page-header {
-  padding: 140px 0 80px;
+  padding: 160px 0 100px;
   background: var(--linen);
   text-align: center;
-}
-.page-header h1 { margin-bottom: 16px; }
-.page-header p { 
-  color: var(--muted); 
-  font-size: 1.1rem; 
-  max-width: 600px; 
-  margin: 0 auto; 
+  position: relative;
 }
 
-/* Forms */
-.form-group { margin-bottom: 20px; }
+.page-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+}
+
+.page-header h1 { 
+  margin-bottom: 20px; 
+}
+
+.page-header p { 
+  color: var(--muted); 
+  font-size: 1.15rem; 
+  max-width: 600px; 
+  margin: 0 auto;
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+/* Forms - Rustiek */
+.form-group { margin-bottom: 24px; }
+
 .form-group label {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--green-dark);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
 }
+
 .form-group input,
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 14px 18px;
-  border: 1.5px solid var(--linen-dark);
+  padding: 16px 20px;
+  border: 2px solid var(--linen-dark);
   border-radius: var(--radius);
   font-family: var(--font-sans);
   font-size: 1rem;
   background: var(--white);
   color: var(--ink);
-  transition: border var(--transition);
+  transition: all var(--transition);
 }
+
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
   border-color: var(--gold);
+  box-shadow: 0 0 0 4px rgba(184, 134, 11, 0.1);
 }
-.form-group textarea { resize: vertical; min-height: 120px; }
 
-/* ── WhatsApp Button ──────────────────────────────────────────────────────── */
-.whatsapp-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 60px;
-  height: 60px;
-  background: #25D366;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
-  z-index: 999;
-  transition: all 0.3s ease;
-}
-.whatsapp-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
-}
-.whatsapp-btn svg {
-  width: 32px;
-  height: 32px;
-  fill: #fff;
-}
-@media (max-width: 768px) {
-  .whatsapp-btn { bottom: 16px; right: 16px; width: 56px; height: 56px; }
-  .whatsapp-btn svg { width: 28px; height: 28px; }
+.form-group textarea { 
+  resize: vertical; 
+  min-height: 140px; 
 }
