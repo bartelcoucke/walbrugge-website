@@ -399,6 +399,16 @@ app.get('/api/admin/stats', authMiddleware('admin'), (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// REDIRECTS (oude URLs naar nieuwe)
+// ═══════════════════════════════════════════════════════════════════════════
+
+app.get('/feestzaal', (req, res) => res.redirect(301, '/feesten'));
+app.get('/zakelijk', (req, res) => res.redirect(301, '/teams'));
+app.get('/privefeesten', (req, res) => res.redirect(301, '/feesten'));
+app.get('/trouwfeest', (req, res) => res.redirect(301, '/feesten#trouwfeest'));
+app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest'));
+
+// ═══════════════════════════════════════════════════════════════════════════
 // PAGE ROUTES (SPA-style routing)
 // ═══════════════════════════════════════════════════════════════════════════
 
