@@ -217,7 +217,16 @@
       <a href="/ruimtes/polyvalente-zaal" class="zaal-card-link">
         <article class="zaal-card zaal-featured">
           <div class="zaal-image">
-            <img src="/assets/img/polyvalente-zaal.jpg" alt="Polyvalente zaal met digibord" loading="lazy">
+            <div class="zaal-slider" data-zaal-slider>
+              <div class="zaal-slider-track">
+                <img src="/assets/img/polyvalente-zaal-corporate-1.jpg" alt="Polyvalente zaal — workshopopstelling" loading="lazy">
+                <img src="/assets/img/polyvalente-zaal-corporate-2.jpg" alt="Polyvalente zaal — corporate meeting" loading="lazy">
+                <img src="/assets/img/polyvalente-zaal-corporate-3.jpg" alt="Polyvalente zaal — vergaderopstelling" loading="lazy">
+              </div>
+              <button class="zaal-slider-btn zaal-slider-prev" aria-label="Vorige foto">‹</button>
+              <button class="zaal-slider-btn zaal-slider-next" aria-label="Volgende foto">›</button>
+              <div class="zaal-slider-dots"></div>
+            </div>
             <span class="zaal-cap">40 pers.</span>
           </div>
           <div class="zaal-content">
@@ -681,6 +690,74 @@
   border-radius: 999px;
 }
 
+/* Mini-carrousel in een zaal-tegel */
+.zaal-slider {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.zaal-slider-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.5s ease;
+}
+
+.zaal-slider-track img {
+  min-width: 100%;
+}
+
+.zaal-slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.85);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--ink);
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.zaal-slider-btn:hover {
+  background: var(--gold);
+  color: #fff;
+}
+
+.zaal-slider-prev { left: 10px; }
+.zaal-slider-next { right: 10px; }
+
+.zaal-slider-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.zaal-slider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.zaal-slider-dot.active {
+  background: var(--gold);
+  transform: scale(1.2);
+}
+
 .zaal-content {
   padding: 24px;
 }
@@ -829,6 +906,39 @@
 </style>
 
 <script src="/assets/js/app.js" defer></script>
+
+<!-- Zaal-tegel carrousel -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[data-zaal-slider]').forEach(slider => {
+    const track = slider.querySelector('.zaal-slider-track');
+    const imgs = track.querySelectorAll('img');
+    const dotsWrap = slider.querySelector('.zaal-slider-dots');
+    let current = 0;
+
+    imgs.forEach((_, n) => {
+      const dot = document.createElement('button');
+      dot.className = 'zaal-slider-dot' + (n === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', 'Foto ' + (n + 1));
+      dot.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); goTo(n); });
+      dotsWrap.appendChild(dot);
+    });
+    const dots = dotsWrap.querySelectorAll('.zaal-slider-dot');
+
+    function goTo(n) {
+      current = (n + imgs.length) % imgs.length;
+      track.style.transform = 'translateX(-' + (current * 100) + '%)';
+      dots.forEach((d, k) => d.classList.toggle('active', k === current));
+    }
+
+    // preventDefault: de tegel is zelf een link naar de detailpagina
+    slider.querySelector('.zaal-slider-prev').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); goTo(current - 1); });
+    slider.querySelector('.zaal-slider-next').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); goTo(current + 1); });
+
+    setInterval(() => goTo(current + 1), 4000);
+  });
+});
+</script>
 
 <!-- WhatsApp Button -->
 <a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat via WhatsApp">
