@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 100" width="470" height="100">
+  <!-- Background -->
+  <rect width="470" height="100" fill="transparent"/>
+  
+  <!-- Salino Figure (gold/bronze color #a89968) -->
+  <g fill="#a89968">
+    <!-- Head (circle) -->
+    <circle cx="35" cy="18" r="12"/>
+    
+    <!-- Body/Arms (V-shape with person) -->
+    <path d="M35 30 L35 55 M20 75 L35 55 L50 75 M10 35 L35 50 L60 35" stroke="#a89968" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Vertical line separator -->
+  <line x1="85" y1="15" x2="85" y2="85" stroke="#a89968" stroke-width="1"/>
+  
+  <!-- Text: SALINO AWARD -->
+  <text x="105" y="42" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="400" fill="#3d3d3d" letter-spacing="8">SALINO AWARD</text>
+  
+  <!-- Text: BEST OF 2025 -->
+  <text x="105" y="75" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="300" fill="#a89968" letter-spacing="6">BEST OF 2025</text>
+</svg>

@@ -1571,3 +1571,27 @@ a.award-card:hover {
     font-size: 1rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SALINO AWARD CARD (homepage)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.award-salino {
+  background: linear-gradient(135deg, #f8f6f0 0%, #fff 100%);
+  border: 2px solid var(--gold);
+}
+
+.award-salino:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 50px var(--shadow-warm);
+}
+
+.award-salino .salino-logo {
+  height: 50px;
+  width: auto;
+  margin-bottom: 16px;
+}
+
+.award-salino .award-score {
+  color: var(--gold-dark);
+}
