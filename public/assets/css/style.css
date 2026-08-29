@@ -1655,3 +1655,322 @@ a.award-card:hover {
   .hero-award-badge { font-size: 0.75rem; padding: 8px 14px; }
   .hero-award-salino img { height: 26px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RUIMTE DETAIL PAGES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Ruimte Hero */
+.ruimte-hero {
+  position: relative;
+  min-height: 50vh;
+  display: flex;
+  align-items: flex-end;
+  padding: 60px 0 40px;
+}
+
+.ruimte-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.ruimte-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+}
+
+.ruimte-hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  color: #fff;
+}
+
+.ruimte-hero h1 {
+  font-size: 3rem;
+  margin: 16px 0 12px;
+  color: #fff;
+}
+
+.ruimte-hero-sub {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  max-width: 600px;
+}
+
+.breadcrumb {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.breadcrumb a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* Ruimte Grid */
+.ruimte-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 48px;
+  align-items: start;
+}
+
+.ruimte-main h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.ruimte-main h3 {
+  font-size: 1.3rem;
+  margin: 32px 0 16px;
+  color: var(--green-dark);
+}
+
+.ruimte-main p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+/* Facilities List */
+.facilities-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.facilities-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--linen);
+  border-radius: var(--radius);
+}
+
+.fac-icon {
+  font-size: 1.3rem;
+}
+
+/* Ruimte Gallery */
+.ruimte-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.ruimte-gallery img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.ruimte-gallery img:only-child {
+  grid-column: span 2;
+  height: 300px;
+}
+
+/* Ruimte Note Box */
+.ruimte-note {
+  background: linear-gradient(135deg, var(--linen) 0%, #fff 100%);
+  border-left: 4px solid var(--gold);
+  padding: 24px;
+  margin: 32px 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.ruimte-note h4 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.ruimte-note p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Sidebar Card */
+.ruimte-sidebar {
+  position: sticky;
+  top: 100px;
+}
+
+.ruimte-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px var(--shadow);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.ruimte-card-header {
+  text-align: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--linen-dark);
+  margin-bottom: 20px;
+}
+
+.ruimte-cap-badge {
+  display: inline-block;
+  background: var(--gold);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.ruimte-card-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.ruimte-specs {
+  margin-bottom: 24px;
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--linen);
+  font-size: 0.9rem;
+}
+
+.spec-label {
+  color: var(--muted);
+}
+
+.spec-value {
+  font-weight: 600;
+}
+
+.ruimte-pricing {
+  text-align: center;
+  padding: 20px;
+  background: var(--linen);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+
+.pricing-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.pricing-amount {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.pricing-note {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.ruimte-card-note {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 16px;
+}
+
+.ruimte-card-note a {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* Other Rooms */
+.ruimte-other {
+  background: var(--linen);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.ruimte-other h4 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.ruimte-other ul li {
+  border-bottom: 1px solid var(--linen-dark);
+}
+
+.ruimte-other ul li:last-child {
+  border: none;
+}
+
+.ruimte-other a {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.ruimte-other a:hover {
+  color: var(--gold-dark);
+}
+
+.ruimte-other span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .ruimte-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ruimte-sidebar {
+    position: static;
+  }
+  
+  .facilities-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ruimte-hero h1 {
+    font-size: 2rem;
+  }
+  
+  .ruimte-gallery {
+    grid-template-columns: 1fr;
+  }
+  
+  .ruimte-gallery img,
+  .ruimte-gallery img:only-child {
+    height: 200px;
+    grid-column: span 1;
+  }
+}

@@ -446,6 +446,19 @@ app.get('/bb/:slug', (req, res) => {
   }
 });
 
+// Ruimtes pages
+const ruimtes = ['panoramische-zaal', 'polyvalente-zaal', 'vergaderzaal', 'zolderzalen', 'pianobar'];
+ruimtes.forEach(ruimte => {
+  app.get(`/ruimtes/${ruimte}`, (req, res) => {
+    const file = path.join(__dirname, '..', 'public', 'ruimtes', `${ruimte}.html`);
+    if (fs.existsSync(file)) {
+      res.sendFile(file);
+    } else {
+      res.sendFile(path.join(__dirname, '..', 'public', 'teams.html'));
+    }
+  });
+});
+
 // Catch-all: serve index.html
 app.get('*', (req, res) => {
   // Skip API routes
