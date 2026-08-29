@@ -403,7 +403,7 @@ app.get('/api/admin/stats', authMiddleware('admin'), (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Serve specific HTML pages
-const pages = ['feestzaal', 'bb', 'zakelijk', 'over-ons', 'contact', 'offerte', 'privacy', 'login', 'admin'];
+const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'login', 'admin'];
 
 pages.forEach(page => {
   app.get(`/${page}`, (req, res) => {
