@@ -704,3 +704,33 @@ p { margin-bottom: 1rem; }
   border-color: var(--gold);
 }
 .form-group textarea { resize: vertical; min-height: 120px; }
+
+/* ── WhatsApp Button ──────────────────────────────────────────────────────── */
+.whatsapp-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 60px;
+  height: 60px;
+  background: #25D366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+  z-index: 999;
+  transition: all 0.3s ease;
+}
+.whatsapp-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.5);
+}
+.whatsapp-btn svg {
+  width: 32px;
+  height: 32px;
+  fill: #fff;
+}
+@media (max-width: 768px) {
+  .whatsapp-btn { bottom: 16px; right: 16px; width: 56px; height: 56px; }
+  .whatsapp-btn svg { width: 28px; height: 28px; }
+}
