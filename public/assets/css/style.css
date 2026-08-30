@@ -1301,7 +1301,7 @@ p { margin-bottom: 1rem; }
   background: linear-gradient(135deg, #f8f6f0 0%, #fff 100%);
   border: 2px solid var(--gold);
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
+  padding: 14px 22px 12px;
   text-align: center;
   box-shadow: 0 4px 20px var(--shadow);
   transition: all var(--transition);
@@ -1433,7 +1433,14 @@ a.award-card {
   font-weight: 700;
   color: var(--green-dark);
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 0;
+}
+
+.award-review-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 4px 0 4px;
 }
 
 .award-score span {
