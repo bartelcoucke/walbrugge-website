@@ -39,29 +39,6 @@
 </header>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- AWARD BANNER (Salino + Eventplanner)                                    -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<section class="corporate-awards">
-  <div class="container">
-    <div class="corporate-awards-grid">
-      <a href="https://www.salino.be/nl/locaties/6318-walbrugge/?asi=26135523" target="_blank" rel="noopener" class="corporate-award salino-award">
-        <img src="/assets/img/salino-award-2025.svg" alt="Salino Award Best of 2025" class="award-logo">
-        <div class="award-text">
-          <span class="award-title">Salino Award Winner</span>
-          <span class="award-score">9,5/10 · Top Performer 2025</span>
-        </div>
-      </a>
-      <a href="https://www.eventplanner.be/bedrijven/13607_walbrugge.html" target="_blank" rel="noopener" class="corporate-award eventplanner-award">
-        <div class="award-icon">⭐⭐⭐⭐⭐</div>
-        <div class="award-text">
-          <span class="award-title">Eventplanner.be</span>
-          <span class="award-score">10/10 · 6 reviews</span>
-        </div>
-      </a>
-    </div>
-  </div>
-</section>
-
 <!-- Hero -->
 <section class="hero hero-page hero-corporate">
   <div class="hero-bg" style="background-image:url('/assets/img/zakelijk-hero.jpg')"></div>
@@ -70,6 +47,15 @@
     <p class="hero-kicker">Teams & Organisaties</p>
     <h1>Buitengewone locatie<br><em>voor buitengewone teams</em></h1>
     <p class="hero-sub">Vergaderzaal, opleidingszaal, executive meeting, focus sessies, workshop, directiemeeting. Van 6 tot 40 personen op een 18e-eeuwse hoeve.</p>
+    <div class="hero-awards">
+      <a href="https://www.salino.be/nl/locaties/6318-walbrugge/?asi=26135523" target="_blank" rel="noopener" class="hero-award-badge hero-award-salino">
+        <img src="/assets/img/salino-award-2025.svg" alt="Salino Award — Beste eventlocatie van 2025">
+        <span class="hero-award-score">9,5/10</span>
+      </a>
+      <a href="https://www.eventplanner.be/directory/13607_walbrugge.html" target="_blank" rel="noopener" class="hero-award-badge hero-award-ep">
+        <img src="/assets/img/eventplanner-logo.svg" alt="eventplanner.be" class="ep-logo"> 10/10
+      </a>
+    </div>
   </div>
 </section>
 
@@ -440,62 +426,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    TEAMS PAGE STYLES
    ═══════════════════════════════════════════════════════════════════════════ */
-
-/* Corporate Awards Banner */
-.corporate-awards {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  padding: 20px 0;
-}
-
-.corporate-awards-grid {
-  display: flex;
-  justify-content: center;
-  gap: 48px;
-  flex-wrap: wrap;
-}
-
-.corporate-award {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  text-decoration: none;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: var(--radius);
-  transition: all 0.3s ease;
-}
-
-.corporate-award:hover {
-  background: rgba(255,255,255,0.1);
-  transform: translateY(-2px);
-}
-
-.salino-award .award-logo {
-  height: 50px;
-  width: auto;
-}
-
-.eventplanner-award .award-icon {
-  font-size: 1.2rem;
-  letter-spacing: 2px;
-}
-
-.award-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.award-title {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--gold-light);
-}
-
-.award-score {
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
 
 /* Hero Corporate */
 .hero-corporate { min-height: 70vh; }
@@ -897,7 +827,6 @@
 }
 
 @media (max-width: 768px) {
-  .corporate-awards-grid { flex-direction: column; align-items: center; gap: 24px; }
   .zalen-grid { grid-template-columns: 1fr; }
   .esg-grid { grid-template-columns: 1fr; }
 }
