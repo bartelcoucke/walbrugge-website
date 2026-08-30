@@ -1725,10 +1725,10 @@ a.award-card:hover {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 253, 248, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 253, 248, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   color: var(--green-dark);
   height: 45px;
   padding: 0 18px;
@@ -1744,7 +1744,7 @@ a.award-card:hover {
 }
 
 .hero-award-salino {
-  background: rgba(255, 253, 248, 0.4);
+  background: rgba(255, 253, 248, 0.22);
   border: 1px solid rgba(184, 134, 11, 0.6);
   padding: 0 16px;
 }
@@ -1769,7 +1769,8 @@ a.hero-award-badge:hover {
 
 .hero-award-caption {
   font-size: 0.68rem;
-  color: var(--muted);
+  font-weight: 600;
+  color: var(--ink);
   white-space: nowrap;
 }
 
