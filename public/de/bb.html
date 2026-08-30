@@ -441,5 +441,73 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox">
+  <button class="lightbox-close" aria-label="Schließen">&times;</button>
+  <button class="lightbox-btn lightbox-prev" aria-label="Zurück">&#10094;</button>
+  <img src="" alt="" id="lightbox-img">
+  <button class="lightbox-btn lightbox-next" aria-label="Weiter">&#10095;</button>
+  <div class="lightbox-counter" id="lightbox-counter"></div>
+</div>
+<script>
+(function() {
+  const overlay = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lightbox-img');
+  const lbCounter = document.getElementById('lightbox-counter');
+  let currentImages = [];
+  let currentIndex = 0;
+
+  function showLightbox(images, index) {
+    currentImages = images;
+    currentIndex = index;
+    updateLightbox();
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function updateLightbox() {
+    lbImg.src = currentImages[currentIndex];
+    lbCounter.textContent = (currentIndex + 1) + ' / ' + currentImages.length;
+  }
+
+  function closeLightbox() {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  overlay.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeLightbox();
+  });
+
+  overlay.querySelector('.lightbox-prev').addEventListener('click', function(e) {
+    e.stopPropagation();
+    currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+    updateLightbox();
+  });
+
+  overlay.querySelector('.lightbox-next').addEventListener('click', function(e) {
+    e.stopPropagation();
+    currentIndex = (currentIndex + 1) % currentImages.length;
+    updateLightbox();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (!overlay.classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') { currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length; updateLightbox(); }
+    if (e.key === 'ArrowRight') { currentIndex = (currentIndex + 1) % currentImages.length; updateLightbox(); }
+  });
+
+  document.querySelectorAll('.room-carousel').forEach(function(carousel) {
+    carousel.querySelectorAll('img').forEach(function(img, i) {
+      img.addEventListener('click', function() {
+        var imgs = Array.from(carousel.querySelectorAll('img')).map(function(im) { return im.src; });
+        showLightbox(imgs, i);
+      });
+    });
+  });
+})();
+</script>
 </body>
 </html>
