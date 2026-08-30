@@ -1333,6 +1333,11 @@ a.award-card {
   border-radius: 8px;
 }
 
+.award-booking-full {
+  height: 26px;
+  width: auto;
+}
+
 .award-ep-logo {
   height: 30px;
   width: auto;
