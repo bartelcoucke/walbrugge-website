@@ -1343,17 +1343,29 @@ a.award-card {
   width: auto;
 }
 
+.award-review-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 6px;
+}
+
+.award-review-word {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
 .award-score-tile {
   display: inline-block;
   background: #003b95;
   color: #fff;
-  font-family: var(--font-serif);
   font-weight: 700;
-  font-size: 1.6rem;
+  font-size: 1.1rem;
   line-height: 1;
-  padding: 10px 12px;
+  padding: 9px 10px;
   border-radius: 8px 8px 8px 0;
-  margin: 8px 0 4px;
 }
 
 .award-badge {
