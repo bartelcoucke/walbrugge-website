@@ -2904,9 +2904,9 @@ a.hero-award-badge:hover {
   border-color: rgba(184, 134, 11, 0.6);
 }
 
-.stamp-salino img {
-  height: 32px;
-  width: auto;
+.stamp-cup {
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .stamp-row {
