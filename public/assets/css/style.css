@@ -2962,6 +2962,13 @@ a.hero-award-badge:hover {
   vertical-align: middle;
 }
 
+/* Booking-tegel boven de reviews op de B&B-pagina */
+.reviews-booking-card {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
 /* Directe berichtlinks in de offerte-zijbalk */
 .aside-direct {
   margin: 10px 0 0;
