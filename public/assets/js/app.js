@@ -250,15 +250,16 @@
   `;
   document.head.appendChild(shakeStyle);
 
-  // ── Booking.com link in de taal van de pagina ──────────────────────────────
-  const bookingBadge = document.getElementById('bookingBadge');
-  if (bookingBadge) {
+  // ── Booking.com links in de taal van de pagina ─────────────────────────────
+  const bookingLinks = document.querySelectorAll('#bookingBadge, .js-booking-link');
+  if (bookingLinks.length) {
     const lang = (document.documentElement.lang || 'nl').split('-')[0];
     const bookingLangs = { nl: 'nl', fr: 'fr', de: 'de', en: 'en-gb' };
     const suffix = bookingLangs[lang];
-    bookingBadge.href = suffix
+    const url = suffix
       ? 'https://www.booking.com/hotel/be/walbrugge.' + suffix + '.html'
       : 'https://www.booking.com/hotel/be/walbrugge.html';
+    bookingLinks.forEach(el => { el.href = url; });
   }
 
   // ── Console branding ───────────────────────────────────────────────────────
