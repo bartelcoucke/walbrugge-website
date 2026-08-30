@@ -330,22 +330,6 @@ p { margin-bottom: 1rem; }
   box-shadow: 0 4px 15px var(--shadow-warm);
 }
 
-.nav-login {
-  color: var(--gold-dark) !important;
-  font-weight: 600 !important;
-  padding: 10px 24px !important;
-  border: 2px solid var(--gold) !important;
-  border-radius: var(--radius) !important;
-  margin-left: 8px !important;
-}
-
-.nav-login::after { display: none !important; }
-
-.nav-login:hover {
-  background: var(--gold) !important;
-  color: var(--white) !important;
-}
-
 .nav-burger {
   display: none;
   flex-direction: column;
