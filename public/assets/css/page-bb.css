@@ -4,9 +4,35 @@
 .rooms-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 48px; }
 .room-card { background: var(--white); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 4px 20px var(--shadow); transition: all var(--transition); }
 .room-card:hover { transform: translateY(-8px); box-shadow: 0 16px 45px var(--shadow-md); }
-.room-image { height: 220px; overflow: hidden; }
+.room-image { height: 220px; overflow: hidden; position: relative; }
 .room-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
 .room-card:hover .room-image img { transform: scale(1.08); }
+
+/* Room Carousel */
+.room-carousel { position: relative; width: 100%; height: 100%; }
+.room-carousel img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.6s ease; }
+.room-carousel img.active { opacity: 1; position: relative; }
+.room-carousel .carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.45); color: #fff; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px; z-index: 2; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+.room-card:hover .carousel-btn { opacity: 1; }
+.carousel-btn:hover { background: rgba(0,0,0,0.7); }
+.carousel-prev { left: 8px; }
+.carousel-next { right: 8px; }
+.carousel-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 2; }
+.carousel-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); border: none; cursor: pointer; padding: 0; transition: background 0.3s; }
+.carousel-dot.active { background: #fff; }
+
+/* Lightbox */
+.lightbox-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; }
+.lightbox-overlay.active { display: flex; }
+.lightbox-overlay img { max-width: 90vw; max-height: 80vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 40px rgba(0,0,0,0.6); }
+.lightbox-close { position: absolute; top: 20px; right: 30px; background: none; border: none; color: #fff; font-size: 36px; cursor: pointer; z-index: 10000; line-height: 1; }
+.lightbox-close:hover { color: var(--gold, #c9a84c); }
+.lightbox-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); color: #fff; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+.lightbox-btn:hover { background: rgba(255,255,255,0.3); }
+.lightbox-prev { left: 20px; }
+.lightbox-next { right: 20px; }
+.lightbox-counter { color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 16px; }
+.room-carousel img { cursor: pointer; }
 .room-content { padding: 28px; }
 .room-content h3 { font-size: 1.4rem; margin-bottom: 8px; font-style: italic; }
 .room-tagline { color: var(--copper); font-size: 0.9rem; margin-bottom: 16px; font-style: italic; }
@@ -36,3 +62,5 @@
   .rooms-grid { grid-template-columns: 1fr; }
   .info-grid { grid-template-columns: 1fr; }
 }
+
+.rooms-footnote { text-align: center; font-size: 0.85rem; color: var(--muted); margin-top: 24px; font-style: italic; }

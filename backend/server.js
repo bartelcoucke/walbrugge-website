@@ -692,7 +692,7 @@ app.get('/blog/:slug', (req, res) => {
 // TAALVERSIES (FR/EN) — vertaalde pagina's in public/fr en public/en
 // ═══════════════════════════════════════════════════════════════════════════
 
-const languages = ['fr', 'en'];
+const languages = ['fr', 'en', 'de'];
 languages.forEach(lang => {
   const serveLang = (relPath, nlFallback) => (req, res) => {
     const file = path.join(__dirname, '..', 'public', lang, relPath);
