@@ -2886,6 +2886,59 @@ a.hero-award-badge:hover {
   color: var(--gold-light);
 }
 
+/* Proof-regel in de hero: één subtiele witte regel onder de knoppen */
+.hero-proof {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 26px;
+  font-size: 0.95rem;
+  color: #fff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.02em;
+}
+
+.hero-proof a {
+  color: #fff;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: color var(--transition);
+}
+
+.hero-proof a:hover {
+  color: var(--gold-light);
+}
+
+.hero-proof-sep {
+  opacity: 0.55;
+  margin: 0 14px;
+}
+
+.hero-proof-score {
+  background: #003b95;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 6px 7px;
+  border-radius: 6px 6px 6px 0;
+  text-shadow: none;
+}
+
+@media (max-width: 600px) {
+  .hero-proof {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hero-proof-sep {
+    display: none;
+  }
+}
+
 /* Stempels met de inhoud/kleuren van de oorspronkelijke award-knoppen */
 .stamp-light {
   background: rgba(255, 253, 248, 0.22);
