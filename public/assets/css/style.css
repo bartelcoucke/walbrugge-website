@@ -1298,7 +1298,7 @@ p { margin-bottom: 1rem; }
 }
 
 .award-card {
-  background: linear-gradient(135deg, #f8f6f0 0%, #fff 100%);
+  background: #fff;
   border: 2px solid var(--gold);
   border-radius: var(--radius-lg);
   padding: 14px 22px 12px;
@@ -3178,24 +3178,6 @@ a.hero-award-badge:hover {
   position: relative;
   background: rgba(201, 168, 76, 0.2) !important;
   border-color: rgba(201, 168, 76, 0.4) !important;
-}
-
-.award-icon {
-  font-size: 1.5rem;
-  animation: awardFlash 2s ease-in-out infinite;
-}
-
-@keyframes awardFlash {
-  0%, 100% { 
-    opacity: 1; 
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 transparent);
-  }
-  50% { 
-    opacity: 1; 
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
-  }
 }
 
 .stamp-award .stamp-label {
