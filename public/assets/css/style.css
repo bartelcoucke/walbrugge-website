@@ -1730,7 +1730,8 @@ a.award-card:hover {
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.45);
   color: var(--green-dark);
-  padding: 10px 18px;
+  height: 45px;
+  padding: 0 18px;
   border-radius: 999px;
   font-size: 0.85rem;
   text-decoration: none;
@@ -1745,7 +1746,7 @@ a.award-card:hover {
 .hero-award-salino {
   background: rgba(255, 253, 248, 0.4);
   border: 1px solid rgba(184, 134, 11, 0.6);
-  padding: 8px 18px;
+  padding: 0 16px;
 }
 
 .hero-award-salino img {
@@ -1808,7 +1809,7 @@ a.hero-award-badge:hover {
 
 @media (max-width: 768px) {
   .hero-awards { gap: 10px; }
-  .hero-award-badge { font-size: 0.75rem; padding: 8px 14px; }
+  .hero-award-badge { font-size: 0.75rem; height: 40px; padding: 0 14px; }
   .hero-award-salino img { height: 26px; }
 }
 
