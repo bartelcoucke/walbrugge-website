@@ -2767,3 +2767,188 @@ a.hero-award-badge:hover {
     font-size: 1.8rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO V2 - Transparante stempels & nieuwe titels
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Grotere logo in nav */
+.nav-logo img.logo-large,
+.nav-logo-hero img {
+  height: 70px !important;
+  width: auto !important;
+  max-height: none !important;
+}
+
+/* Hero titel en subtitel */
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: 3.5rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 20px;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.hero-subtitle {
+  font-size: 1.3rem;
+  color: rgba(255,255,255,0.9);
+  max-width: 700px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.3);
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-white-outline {
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.7);
+  color: #fff;
+}
+
+.btn-white-outline:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: #fff;
+}
+
+/* Transparante kwaliteitsstempels aan rechterzijde */
+.hero-stamps {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  text-decoration: none;
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.stamp:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.05);
+}
+
+.stamp-score {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--gold-light);
+}
+
+.stamp-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+/* Responsive stempels */
+@media (max-width: 1024px) {
+  .hero-stamps {
+    position: absolute;
+    right: auto;
+    left: 50%;
+    top: auto;
+    bottom: 100px;
+    transform: translateX(-50%);
+    flex-direction: row;
+    gap: 15px;
+  }
+  
+  .stamp {
+    padding: 10px 14px;
+  }
+  
+  .stamp-score {
+    font-size: 1.4rem;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-stamps {
+    bottom: 90px;
+    gap: 8px;
+  }
+  
+  .stamp {
+    padding: 8px 10px;
+  }
+  
+  .stamp-score {
+    font-size: 1.1rem;
+  }
+  
+  .stamp-label {
+    font-size: 0.6rem;
+  }
+  
+  .hero-title {
+    font-size: 1.8rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1rem;
+    padding: 0 20px;
+  }
+}
+
+/* Award stamp met flash animatie */
+.stamp-award {
+  position: relative;
+  background: rgba(201, 168, 76, 0.2) !important;
+  border-color: rgba(201, 168, 76, 0.4) !important;
+}
+
+.award-icon {
+  font-size: 1.5rem;
+  animation: awardFlash 2s ease-in-out infinite;
+}
+
+@keyframes awardFlash {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+  }
+}
+
+.stamp-award .stamp-label {
+  color: var(--gold-light);
+  font-weight: 600;
+}
