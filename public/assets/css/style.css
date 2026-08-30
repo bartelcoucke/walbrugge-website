@@ -2297,3 +2297,12 @@ a.award-card:hover {
     height: 250px;
   }
 }
+
+/* Ruimtes capaciteit "pers." styling */
+.ruimte-cap small {
+  font-size: 0.45em;
+  font-weight: 400;
+  opacity: 0.8;
+  display: block;
+  margin-top: -8px;
+}
