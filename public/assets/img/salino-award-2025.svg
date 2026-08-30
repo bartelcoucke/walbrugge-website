@@ -1,22 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 100" width="560" height="100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 100" width="420" height="100">
   <!-- Background -->
-  <rect width="470" height="100" fill="transparent"/>
-  
+  <rect width="420" height="100" fill="transparent"/>
+
   <!-- Salino Figure (gold/bronze color #a89968) -->
   <g fill="#a89968">
     <!-- Head (circle) -->
     <circle cx="35" cy="18" r="12"/>
-    
+
     <!-- Body/Arms (V-shape with person) -->
     <path d="M35 30 L35 55 M20 75 L35 55 L50 75 M10 35 L35 50 L60 35" stroke="#a89968" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  
+
   <!-- Vertical line separator -->
   <line x1="85" y1="15" x2="85" y2="85" stroke="#a89968" stroke-width="1"/>
-  
+
   <!-- Text: SALINO AWARD -->
-  <text x="105" y="42" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="400" fill="#3d3d3d" letter-spacing="8">SALINO AWARD</text>
-  
-  <!-- Text: BESTE EVENTLOCATIE VAN 2025 -->
-  <text x="105" y="74" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#8b6914" letter-spacing="3">BESTE EVENTLOCATIE VAN 2025</text>
+  <text x="105" y="30" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="400" fill="#3d3d3d" letter-spacing="7">SALINO AWARD</text>
+
+  <!-- Text: BESTE EVENTLOCATIE -->
+  <text x="105" y="60" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#8b6914" letter-spacing="3">BESTE EVENTLOCATIE</text>
+
+  <!-- Text: 2025 (gecentreerd onder BESTE EVENTLOCATIE) -->
+  <text x="255" y="88" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" fill="#8b6914" letter-spacing="3">2025</text>
 </svg>
