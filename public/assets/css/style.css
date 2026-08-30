@@ -1264,7 +1264,8 @@ p { margin-bottom: 1rem; }
 }
 
 .award-card {
-  background: var(--white);
+  background: linear-gradient(135deg, #f8f6f0 0%, #fff 100%);
+  border: 2px solid var(--gold);
   border-radius: var(--radius-lg);
   padding: 20px 24px;
   text-align: center;
@@ -1285,8 +1286,8 @@ p { margin-bottom: 1rem; }
 }
 
 .award-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 40px var(--shadow-warm);
+  transform: translateY(-8px);
+  box-shadow: 0 16px 50px var(--shadow-warm);
 }
 
 .award-featured {
@@ -1662,16 +1663,6 @@ a.award-card:hover {
 /* ═══════════════════════════════════════════════════════════════════════════
    SALINO AWARD CARD (homepage)
    ═══════════════════════════════════════════════════════════════════════════ */
-
-.award-salino {
-  background: linear-gradient(135deg, #f8f6f0 0%, #fff 100%);
-  border: 2px solid var(--gold);
-}
-
-.award-salino:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 16px 50px var(--shadow-warm);
-}
 
 .award-salino .salino-logo {
   height: 44px;
