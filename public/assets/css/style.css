@@ -330,6 +330,39 @@ p { margin-bottom: 1rem; }
   box-shadow: 0 4px 15px var(--shadow-warm);
 }
 
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+}
+
+.lang-switch a {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: rgba(61, 50, 40, 0.55);
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.lang-switch a::after { display: none !important; }
+
+.lang-switch a:hover {
+  color: var(--gold-dark);
+  background: rgba(184, 134, 11, 0.08);
+}
+
+.lang-switch a.lang-active {
+  color: var(--gold-dark);
+  font-weight: 700;
+}
+
+.lang-switch .lang-sep {
+  color: rgba(61, 50, 40, 0.3);
+  font-size: 0.7rem;
+}
+
 .nav-burger {
   display: none;
   flex-direction: column;

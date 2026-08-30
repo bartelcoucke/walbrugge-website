@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inloggen · domein Walbrugge</title>
+<title>Se connecter · domein Walbrugge</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/png" href="/assets/img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,47 +21,47 @@
 <div class="login-page">
   <div class="login-card">
     <div class="login-logo">
-      <a href="/"><img src="/assets/img/walbrugge_logo_round.png" alt="Domein Walbrugge"></a>
+      <a href="/fr"><img src="/assets/img/walbrugge_logo_round.png" alt="Domein Walbrugge"></a>
     </div>
-    
-    <h1 class="login-title">Inloggen</h1>
-    <p class="login-sub">Kies hieronder hoe u wilt inloggen</p>
-    
+
+    <h1 class="login-title">Se connecter</h1>
+    <p class="login-sub">Choisissez ci-dessous comment vous souhaitez vous connecter</p>
+
     <div class="login-tabs">
-      <button class="login-tab active" data-tab="guest">Gast</button>
-      <button class="login-tab" data-tab="admin">Beheerder</button>
+      <button class="login-tab active" data-tab="guest">Hôte</button>
+      <button class="login-tab" data-tab="admin">Administrateur</button>
     </div>
-    
+
     <!-- Guest Login Form -->
     <form id="guestForm" class="login-form active">
       <div class="form-group">
-        <label for="guestEmail">E-mailadres</label>
-        <input type="email" id="guestEmail" name="email" required placeholder="naam@voorbeeld.be">
+        <label for="guestEmail">Adresse e-mail</label>
+        <input type="email" id="guestEmail" name="email" required placeholder="nom@exemple.be">
       </div>
       <div class="form-group">
-        <label for="guestRef">Boekingsreferentie</label>
+        <label for="guestRef">Référence de réservation</label>
         <input type="text" id="guestRef" name="reference" required placeholder="WB-XXXXXX">
       </div>
-      <button type="submit" class="btn btn-gold btn-lg btn-full">Inloggen als gast</button>
+      <button type="submit" class="btn btn-gold btn-lg btn-full">Se connecter en tant qu'hôte</button>
       <div id="guestMsg" class="login-msg" style="display:none;"></div>
     </form>
-    
+
     <!-- Admin Login Form -->
     <form id="adminForm" class="login-form">
       <div class="form-group">
-        <label for="adminEmail">E-mailadres</label>
+        <label for="adminEmail">Adresse e-mail</label>
         <input type="email" id="adminEmail" name="email" required placeholder="admin@walbrugge.be">
       </div>
       <div class="form-group">
-        <label for="adminPass">Wachtwoord</label>
+        <label for="adminPass">Mot de passe</label>
         <input type="password" id="adminPass" name="password" required>
       </div>
-      <button type="submit" class="btn btn-green btn-lg btn-full">Inloggen</button>
+      <button type="submit" class="btn btn-green btn-lg btn-full">Se connecter</button>
       <div id="adminMsg" class="login-msg" style="display:none;"></div>
     </form>
-    
+
     <div class="login-footer">
-      <a href="/">← Terug naar de website</a>
+      <a href="/fr">← Retour au site</a>
     </div>
   </div>
 </div>
@@ -94,10 +94,10 @@ document.getElementById('guestForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('guestMsg');
   msg.style.display = 'none';
-  
+
   const email = document.getElementById('guestEmail').value;
   const reference = document.getElementById('guestRef').value;
-  
+
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
@@ -105,18 +105,18 @@ document.getElementById('guestForm').addEventListener('submit', async (e) => {
       body: JSON.stringify({ email, reference })
     });
     const data = await res.json();
-    
+
     if (data.ok && data.token) {
       sessionStorage.setItem('wb_token', data.token);
       sessionStorage.setItem('wb_user', JSON.stringify(data.user));
       window.location.href = data.redirect || '/gasten/dashboard';
     } else {
-      msg.textContent = data.error || 'Inloggen mislukt';
+      msg.textContent = data.error || 'Échec de la connexion';
       msg.className = 'login-msg error';
       msg.style.display = 'block';
     }
   } catch (e) {
-    msg.textContent = 'Verbindingsfout. Probeer opnieuw.';
+    msg.textContent = 'Erreur de connexion. Veuillez réessayer.';
     msg.className = 'login-msg error';
     msg.style.display = 'block';
   }
@@ -127,10 +127,10 @@ document.getElementById('adminForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('adminMsg');
   msg.style.display = 'none';
-  
+
   const email = document.getElementById('adminEmail').value;
   const password = document.getElementById('adminPass').value;
-  
+
   try {
     const res = await fetch('/api/login', {
       method: 'POST',
@@ -138,29 +138,29 @@ document.getElementById('adminForm').addEventListener('submit', async (e) => {
       body: JSON.stringify({ email, password })
     });
     const data = await res.json();
-    
+
     if (data.ok && data.token) {
       sessionStorage.setItem('wb_token', data.token);
       sessionStorage.setItem('wb_user', JSON.stringify(data.user));
       window.location.href = data.redirect || '/admin';
     } else {
-      msg.textContent = data.error || 'Inloggen mislukt';
+      msg.textContent = data.error || 'Échec de la connexion';
       msg.className = 'login-msg error';
       msg.style.display = 'block';
     }
   } catch (e) {
-    msg.textContent = 'Verbindingsfout. Probeer opnieuw.';
+    msg.textContent = 'Erreur de connexion. Veuillez réessayer.';
     msg.className = 'login-msg error';
     msg.style.display = 'block';
   }
 });
 </script>
 
-<a href="https://m.me/walbrugge" class="messenger-btn" target="_blank" rel="noopener" aria-label="Chat via Facebook Messenger">
+<a href="https://m.me/walbrugge" class="messenger-btn" target="_blank" rel="noopener" aria-label="Discuter via Facebook Messenger">
   <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.974 12-11.111C24 4.975 18.627 0 12 0zm1.193 14.963l-3.056-3.259-5.963 3.259L10.733 8l3.13 3.259L19.752 8l-6.559 6.963z" fill="currentColor"/></svg>
 </a>
-<a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat via WhatsApp">
-  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" fill="currentColor"/></svg>
+<a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Discuter via WhatsApp">
+  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
 </a>
 </body>
 </html>

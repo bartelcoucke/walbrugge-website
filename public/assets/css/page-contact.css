@@ -1,0 +1,21 @@
+.contact-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 64px; }
+
+.contact-block { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--linen-dark); }
+.contact-block:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
+.contact-block h3 { font-size: 1.1rem; margin-bottom: 12px; font-family: var(--font-sans); }
+.contact-block address { font-size: 1rem; line-height: 1.8; color: var(--ink); }
+.contact-link { font-size: 1.3rem; font-weight: 600; color: var(--green-dark); transition: color var(--transition); }
+.contact-link:hover { color: var(--gold); }
+.contact-note { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
+.contact-map h3 { font-size: 1.3rem; margin-bottom: 20px; }
+.map-embed { margin-bottom: 32px; }
+
+.directions { background: var(--linen); padding: 28px; border-radius: var(--radius-lg); }
+.directions h4 { font-size: 0.95rem; font-family: var(--font-sans); margin-bottom: 8px; margin-top: 20px; }
+.directions h4:first-child { margin-top: 0; }
+.directions p { font-size: 0.9rem; color: var(--muted); margin-bottom: 0; }
+
+@media (max-width: 900px) {
+  .contact-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,19 @@
+.form-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 64px; }
+.offerte-form { background: var(--white); padding: 40px; border-radius: var(--radius-lg); box-shadow: 0 4px 24px var(--shadow); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.btn-full { width: 100%; }
+.form-msg { text-align: center; margin-top: 16px; font-size: 0.9rem; }
+.form-msg.success { color: var(--green); }
+.form-msg.error { color: #a33; }
+.form-aside { display: flex; flex-direction: column; gap: 24px; }
+.aside-box { background: var(--linen); padding: 24px; border-radius: var(--radius); }
+.aside-box h3 { font-size: 1rem; margin-bottom: 8px; }
+.aside-box p { font-size: 0.9rem; color: var(--muted); margin-bottom: 0; }
+.aside-box .small { font-size: 0.8rem; margin-top: 4px; }
+.aside-box address { font-size: 0.9rem; line-height: 1.6; }
+.phone-link { font-size: 1.2rem; font-weight: 700; color: var(--green-dark); }
+.hp { display: none !important; }
+@media (max-width: 900px) {
+  .form-layout { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}

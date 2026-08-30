@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Offerte Aanvragen · domein Walbrugge</title>
-<meta name="description" content="Vraag een offerte aan voor uw feest, vergadering of verblijf op domein Walbrugge. Persoonlijk contact binnen 24 uur.">
+<title>Demander un devis · domein Walbrugge</title>
+<meta name="description" content="Demandez un devis pour votre fête, réunion ou séjour au domein Walbrugge. Contact personnel sous 24 heures.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://walbrugge.be/offerte">
+<link rel="canonical" href="https://walbrugge.be/fr/offerte">
 <link rel="icon" type="image/png" href="/assets/img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,15 +22,15 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="/" class="nav-logo"><img src="/assets/img/walbrugge_logo_round.png" alt="Domein Walbrugge" width="72" height="72"></a>
-        <nav class="nav-links" id="navLinks" aria-label="Hoofdnavigatie">
-      <a href="/teams">Teams &amp; Organisaties</a>
-      <a href="/feesten">Feesten &amp; Samenzijn</a>
-      <a href="/bb">Boutique B&amp;B</a>
-      <a href="/over-ons">Over ons</a>
-      <a href="/contact">Contact</a>
-      <a href="/offerte" class="nav-cta">Offerte aanvragen</a>
-      <div class="lang-switch" aria-label="Taal / Langue / Language"><a href="/offerte" class="lang-active">NL</a><span class="lang-sep">&middot;</span><a href="/fr/offerte">FR</a><span class="lang-sep">&middot;</span><a href="/en/offerte">EN</a></div>
+    <a href="/fr" class="nav-logo"><img src="/assets/img/walbrugge_logo_round.png" alt="Domein Walbrugge" width="72" height="72"></a>
+        <nav class="nav-links" id="navLinks" aria-label="Navigation principale">
+      <a href="/fr/teams">Teams &amp; Organisations</a>
+      <a href="/fr/feesten">Fêtes &amp; Célébrations</a>
+      <a href="/fr/bb">B&amp;B Boutique</a>
+      <a href="/fr/over-ons">À propos</a>
+      <a href="/fr/contact">Contact</a>
+      <a href="/fr/offerte" class="nav-cta">Demander un devis</a>
+      <div class="lang-switch" aria-label="Taal / Langue / Language"><a href="/offerte">NL</a><span class="lang-sep">&middot;</span><a href="/fr/offerte" class="lang-active">FR</a><span class="lang-sep">&middot;</span><a href="/en/offerte">EN</a></div>
     </nav>
     <button class="nav-burger" id="navBurger" aria-label="Menu"><span></span><span></span><span></span></button>
   </div>
@@ -38,8 +38,8 @@
 
 <section class="page-header">
   <div class="container">
-    <h1>Offerte aanvragen</h1>
-    <p>Vertel ons wat u plant — een feest, een verblijf of een vergadering — en we bezorgen u snel een voorstel op maat.</p>
+    <h1>Demander un devis</h1>
+    <p>Dites-nous ce que vous préparez — une fête, un séjour ou une réunion — et nous vous envoyons rapidement une proposition sur mesure.</p>
   </div>
 </section>
 
@@ -49,106 +49,106 @@
       <form id="offerteForm" class="offerte-form" data-validate novalidate>
         <div class="form-row">
           <div class="form-group">
-            <label for="bedrijf">Bedrijfsnaam</label>
-            <input type="text" id="bedrijf" name="bedrijf" placeholder="Optioneel voor particulieren">
+            <label for="bedrijf">Nom de l'entreprise</label>
+            <input type="text" id="bedrijf" name="bedrijf" placeholder="Facultatif pour les particuliers">
           </div>
           <div class="form-group">
-            <label for="naam">Contactpersoon *</label>
+            <label for="naam">Personne de contact *</label>
             <input type="text" id="naam" name="naam" required>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
-            <label for="email">E-mailadres *</label>
+            <label for="email">Adresse e-mail *</label>
             <input type="email" id="email" name="email" required>
           </div>
           <div class="form-group">
-            <label for="telefoon">Telefoonnummer</label>
+            <label for="telefoon">Numéro de téléphone</label>
             <input type="tel" id="telefoon" name="telefoon">
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
-            <label for="type">Type evenement *</label>
+            <label for="type">Type d'événement *</label>
             <select id="type" name="type" required>
-              <option value="">— Kies —</option>
-              <optgroup label="Zakelijk">
-                <option value="vergadering">Vergadering / meeting</option>
-                <option value="teambuilding">Teambuilding</option>
-                <option value="seminarie">Seminarie / workshop</option>
-                <option value="strategiedag">Strategiedag</option>
-                <option value="exclusief-domein">Exclusief domein</option>
+              <option value="">— Choisissez —</option>
+              <optgroup label="Professionnel">
+                <option value="vergadering">Réunion / meeting</option>
+                <option value="teambuilding">Team building</option>
+                <option value="seminarie">Séminaire / atelier</option>
+                <option value="strategiedag">Journée stratégique</option>
+                <option value="exclusief-domein">Domaine privatisé</option>
               </optgroup>
-              <optgroup label="Feesten">
-                <option value="trouwfeest">Trouwfeest</option>
-                <option value="communie">Communie / lentefeest</option>
-                <option value="verjaardag">Verjaardag / jubileum</option>
-                <option value="bedrijfsfeest">Bedrijfsfeest</option>
-                <option value="ander-feest">Ander feest</option>
+              <optgroup label="Fêtes">
+                <option value="trouwfeest">Mariage</option>
+                <option value="communie">Communion / fête de printemps</option>
+                <option value="verjaardag">Anniversaire / jubilé</option>
+                <option value="bedrijfsfeest">Fête d'entreprise</option>
+                <option value="ander-feest">Autre fête</option>
               </optgroup>
-              <optgroup label="Verblijf">
-                <option value="bb-verblijf">B&B overnachting</option>
-                <option value="groepsverblijf">Groepsverblijf</option>
+              <optgroup label="Séjour">
+                <option value="bb-verblijf">Nuitée B&B</option>
+                <option value="groepsverblijf">Séjour de groupe</option>
               </optgroup>
-              <option value="andere">Andere</option>
+              <option value="andere">Autre</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="personen">Aantal personen</label>
-            <input type="number" id="personen" name="personen" min="1" max="200" placeholder="Ongeveer">
+            <label for="personen">Nombre de personnes</label>
+            <input type="number" id="personen" name="personen" min="1" max="200" placeholder="Approximativement">
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
-            <label for="datum">Gewenste datum</label>
+            <label for="datum">Date souhaitée</label>
             <input type="date" id="datum" name="datum">
           </div>
           <div class="form-group">
-            <label for="formule">Gewenste formule</label>
+            <label for="formule">Formule souhaitée</label>
             <select id="formule" name="formule">
-              <option value="">— Optioneel —</option>
-              <option value="vergadermiddag">Vergadermiddag (€35 p.p.)</option>
-              <option value="teamdag">Teamdag (€65 p.p.)</option>
-              <option value="24uur">24-uur formule (€120 p.p.)</option>
-              <option value="exclusief">Exclusief domein (vanaf €2.500)</option>
-              <option value="op-maat">Op maat</option>
+              <option value="">— Facultatif —</option>
+              <option value="vergadermiddag">Après-midi de réunion (35 € p.p.)</option>
+              <option value="teamdag">Journée d'équipe (65 € p.p.)</option>
+              <option value="24uur">Formule 24 h (120 € p.p.)</option>
+              <option value="exclusief">Domaine privatisé (à partir de 2 500 €)</option>
+              <option value="op-maat">Sur mesure</option>
             </select>
           </div>
         </div>
-        
+
         <div class="form-group">
-          <label for="bericht">Heeft u specifieke wensen of vragen?</label>
-          <textarea id="bericht" name="bericht" rows="5" placeholder="Vertel kort wat u in gedachten hebt: timing, catering, speciale wensen..."></textarea>
+          <label for="bericht">Avez-vous des souhaits ou questions spécifiques ?</label>
+          <textarea id="bericht" name="bericht" rows="5" placeholder="Décrivez brièvement ce que vous avez en tête : timing, traiteur, souhaits particuliers..."></textarea>
         </div>
-        
+
         <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="display:none;">
-        
-        <button type="submit" class="btn btn-gold btn-lg btn-full" id="submitBtn">Verstuur aanvraag</button>
+
+        <button type="submit" class="btn btn-gold btn-lg btn-full" id="submitBtn">Envoyer la demande</button>
         <p class="form-msg" id="formMsg"></p>
       </form>
-      
+
       <aside class="form-aside">
         <div class="aside-box">
-          <h3>🕐 Snelle reactie</h3>
-          <p>We nemen binnen 24 uur contact op. Geen automatische standaardofferte — persoonlijk advies.</p>
+          <h3>🕐 Réponse rapide</h3>
+          <p>Nous vous contactons sous 24 heures. Pas de devis automatique standard — un conseil personnalisé.</p>
         </div>
-        
+
         <div class="aside-box">
-          <h3>📞 Liever bellen?</h3>
+          <h3>📞 Vous préférez appeler ?</h3>
           <p><a href="tel:+32485887723" class="phone-link">+32 485 88 77 23</a></p>
-          <p class="small">Ma–Vr: 9:00–18:00</p>
+          <p class="small">Lun–Ven : 9 h–18 h</p>
         </div>
-        
+
         <div class="aside-box">
-          <h3>📍 Bezoek ons</h3>
+          <h3>📍 Rendez-nous visite</h3>
           <address>
             Walbrugge 36<br>
             8573 Anzegem (Tiegem)
           </address>
-          <p class="small">Bezichtiging op afspraak</p>
+          <p class="small">Visite sur rendez-vous</p>
         </div>
       </aside>
     </div>
@@ -158,7 +158,7 @@
 <footer class="footer">
   <div class="container">
     <div class="footer-bottom" style="border:none;padding:0;">
-      <p>&copy; 2026 domein Walbrugge (RenoPerfect bv) · BTW BE 0830.787.776 · <a href="/privacy">Privacy</a></p>
+      <p>&copy; 2026 domein Walbrugge (RenoPerfect bv) · TVA BE 0830.787.776 · <a href="/privacy">Vie privée</a></p>
     </div>
   </div>
 </footer>
@@ -169,21 +169,21 @@ document.getElementById('offerteForm').addEventListener('submit', async function
   const form = e.target;
   const msg = document.getElementById('formMsg');
   const btn = document.getElementById('submitBtn');
-  
+
   // Honeypot check
   if (form.website.value) return;
-  
+
   const data = Object.fromEntries(new FormData(form));
-  
+
   if (!data.naam || !data.email || !data.type) {
-    msg.textContent = 'Vul alle verplichte velden in.';
+    msg.textContent = 'Veuillez remplir tous les champs obligatoires.';
     msg.className = 'form-msg error';
     return;
   }
-  
+
   btn.disabled = true;
-  btn.textContent = 'Bezig...';
-  
+  btn.textContent = 'Envoi en cours...';
+
   try {
     const res = await fetch('/api/contact', {
       method: 'POST',
@@ -191,22 +191,22 @@ document.getElementById('offerteForm').addEventListener('submit', async function
       body: JSON.stringify(data)
     });
     const result = await res.json();
-    
+
     if (res.ok && result.ok) {
-      msg.textContent = '✓ Bedankt! Uw aanvraag is ontvangen. We nemen binnen 24 uur contact op.';
+      msg.textContent = '✓ Merci ! Votre demande a bien été reçue. Nous vous contactons sous 24 heures.';
       msg.className = 'form-msg success';
       form.reset();
     } else {
-      msg.textContent = result.error || 'Er ging iets mis. Probeer opnieuw.';
+      msg.textContent = result.error || 'Une erreur est survenue. Veuillez réessayer.';
       msg.className = 'form-msg error';
     }
   } catch (e) {
-    msg.textContent = 'Verbindingsfout. Probeer opnieuw of bel ons.';
+    msg.textContent = 'Erreur de connexion. Réessayez ou appelez-nous.';
     msg.className = 'form-msg error';
   }
-  
+
   btn.disabled = false;
-  btn.textContent = 'Verstuur aanvraag';
+  btn.textContent = 'Envoyer la demande';
 });
 
 // Pre-fill formule from URL
@@ -216,10 +216,10 @@ if (params.get('formule')) {
 }
 </script>
 <script src="/assets/js/app.js" defer></script>
-<a href="https://m.me/walbrugge" class="messenger-btn" target="_blank" rel="noopener" aria-label="Chat via Facebook Messenger">
+<a href="https://m.me/walbrugge" class="messenger-btn" target="_blank" rel="noopener" aria-label="Discuter via Facebook Messenger">
   <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.974 12-11.111C24 4.975 18.627 0 12 0zm1.193 14.963l-3.056-3.259-5.963 3.259L10.733 8l3.13 3.259L19.752 8l-6.559 6.963z" fill="currentColor"/></svg>
 </a>
-<a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat via WhatsApp">
+<a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Discuter via WhatsApp">
   <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" fill="currentColor"/></svg>
 </a>
 </body>

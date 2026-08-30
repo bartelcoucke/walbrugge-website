@@ -1,86 +1,345 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Hoofdpagina's -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Homepage -->
   <url>
     <loc>https://walbrugge.be/</loc>
-    <lastmod>2026-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/"/>
   </url>
+  <url>
+    <loc>https://walbrugge.be/fr</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/"/>
+  </url>
+
+  <!-- Teams & Organisaties -->
   <url>
     <loc>https://walbrugge.be/teams</loc>
-    <lastmod>2026-08-29</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/teams"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/teams"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/teams"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/teams"/>
   </url>
+  <url>
+    <loc>https://walbrugge.be/fr/teams</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/teams"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/teams"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/teams"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/teams"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/teams</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/teams"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/teams"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/teams"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/teams"/>
+  </url>
+
+  <!-- Feesten & Samenzijn -->
   <url>
     <loc>https://walbrugge.be/feesten</loc>
-    <lastmod>2026-08-29</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/feesten"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/feesten"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/feesten"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/feesten"/>
   </url>
+  <url>
+    <loc>https://walbrugge.be/fr/feesten</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/feesten"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/feesten"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/feesten"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/feesten"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/feesten</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/feesten"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/feesten"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/feesten"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/feesten"/>
+  </url>
+
+  <!-- Boutique B&B -->
   <url>
     <loc>https://walbrugge.be/bb</loc>
-    <lastmod>2026-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/bb"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/bb"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/bb"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/bb"/>
   </url>
   <url>
-    <loc>https://walbrugge.be/over-ons</loc>
-    <lastmod>2026-08-29</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://walbrugge.be/contact</loc>
-    <lastmod>2026-08-29</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://walbrugge.be/offerte</loc>
-    <lastmod>2026-08-29</lastmod>
+    <loc>https://walbrugge.be/fr/bb</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/bb"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/bb"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/bb"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/bb"/>
   </url>
-  
-  <!-- Ruimtes (individuele zalen) -->
+  <url>
+    <loc>https://walbrugge.be/en/bb</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/bb"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/bb"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/bb"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/bb"/>
+  </url>
+
+  <!-- Over ons -->
+  <url>
+    <loc>https://walbrugge.be/over-ons</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/over-ons"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/fr/over-ons</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/over-ons"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/over-ons</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/over-ons"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/over-ons"/>
+  </url>
+
+  <!-- Contact -->
+  <url>
+    <loc>https://walbrugge.be/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/contact"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/fr/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/contact"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/contact"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/contact"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/contact"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/contact"/>
+  </url>
+
+  <!-- Offerte -->
+  <url>
+    <loc>https://walbrugge.be/offerte</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/offerte"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/offerte"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/offerte"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/offerte"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/fr/offerte</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/offerte"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/offerte"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/offerte"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/offerte"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/offerte</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/offerte"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/offerte"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/offerte"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/offerte"/>
+  </url>
+
+  <!-- Ruimtes -->
   <url>
     <loc>https://walbrugge.be/ruimtes/panoramische-zaal</loc>
-    <lastmod>2026-08-29</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/panoramische-zaal"/>
   </url>
   <url>
-    <loc>https://walbrugge.be/ruimtes/polyvalente-zaal</loc>
-    <lastmod>2026-08-29</lastmod>
+    <loc>https://walbrugge.be/fr/ruimtes/panoramische-zaal</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/panoramische-zaal"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/ruimtes/panoramische-zaal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/panoramische-zaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/panoramische-zaal"/>
   </url>
   <url>
     <loc>https://walbrugge.be/ruimtes/vergaderzaal</loc>
-    <lastmod>2026-08-29</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/vergaderzaal"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/fr/ruimtes/vergaderzaal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/vergaderzaal"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/ruimtes/vergaderzaal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/vergaderzaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/vergaderzaal"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/ruimtes/polyvalente-zaal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/polyvalente-zaal"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/fr/ruimtes/polyvalente-zaal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/polyvalente-zaal"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/ruimtes/polyvalente-zaal</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/polyvalente-zaal"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/polyvalente-zaal"/>
   </url>
   <url>
     <loc>https://walbrugge.be/ruimtes/zolderzalen</loc>
-    <lastmod>2026-08-29</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/zolderzalen"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/fr/ruimtes/zolderzalen</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/zolderzalen"/>
+  </url>
+  <url>
+    <loc>https://walbrugge.be/en/ruimtes/zolderzalen</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/zolderzalen"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/zolderzalen"/>
   </url>
   <url>
     <loc>https://walbrugge.be/ruimtes/pianobar</loc>
-    <lastmod>2026-08-29</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/pianobar"/>
   </url>
-  
-  <!-- Juridisch -->
   <url>
-    <loc>https://walbrugge.be/privacy</loc>
-    <lastmod>2026-08-29</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
+    <loc>https://walbrugge.be/fr/ruimtes/pianobar</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/pianobar"/>
   </url>
+  <url>
+    <loc>https://walbrugge.be/en/ruimtes/pianobar</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="nl" href="https://walbrugge.be/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://walbrugge.be/en/ruimtes/pianobar"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/ruimtes/pianobar"/>
+  </url>
+
 </urlset>

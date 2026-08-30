@@ -469,6 +469,33 @@ ruimtes.forEach(ruimte => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// TAALVERSIES (FR/EN) — vertaalde pagina's in public/fr en public/en
+// ═══════════════════════════════════════════════════════════════════════════
+
+const languages = ['fr', 'en'];
+languages.forEach(lang => {
+  const serveLang = (relPath, nlFallback) => (req, res) => {
+    const file = path.join(__dirname, '..', 'public', lang, relPath);
+    if (fs.existsSync(file)) {
+      return res.sendFile(file);
+    }
+    const nlFile = path.join(__dirname, '..', 'public', nlFallback);
+    if (fs.existsSync(nlFile)) {
+      return res.sendFile(nlFile);
+    }
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  };
+
+  app.get(`/${lang}`, serveLang('index.html', 'index.html'));
+  pages.forEach(page => {
+    app.get(`/${lang}/${page}`, serveLang(`${page}.html`, `${page}.html`));
+  });
+  ruimtes.forEach(ruimte => {
+    app.get(`/${lang}/ruimtes/${ruimte}`, serveLang(path.join('ruimtes', `${ruimte}.html`), path.join('ruimtes', `${ruimte}.html`)));
+  });
+});
+
 // Catch-all: serve index.html
 app.get('*', (req, res) => {
   // Skip API routes
