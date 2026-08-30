@@ -1266,7 +1266,7 @@ p { margin-bottom: 1rem; }
 .award-card {
   background: var(--white);
   border-radius: var(--radius-lg);
-  padding: 36px 28px;
+  padding: 20px 24px;
   text-align: center;
   box-shadow: 0 4px 20px var(--shadow);
   transition: all var(--transition);
@@ -1309,7 +1309,7 @@ p { margin-bottom: 1rem; }
 
 .award-icon {
   font-size: 2.5rem;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1348,7 +1348,7 @@ a.award-card {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin: 14px 0 6px;
+  margin: 6px 0 4px;
 }
 
 .award-review-word {
@@ -1394,11 +1394,11 @@ a.award-card {
 
 .award-score {
   font-family: var(--font-serif);
-  font-size: 3rem;
+  font-size: 2.2rem;
   font-weight: 700;
   color: var(--green-dark);
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .award-score span {
@@ -1674,9 +1674,9 @@ a.award-card:hover {
 }
 
 .award-salino .salino-logo {
-  height: 50px;
+  height: 44px;
   width: auto;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .award-salino .award-score {
