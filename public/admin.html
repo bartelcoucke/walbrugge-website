@@ -42,6 +42,23 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
 .badge-confirmed { background: #e3f2fd; color: #1976d2; }
 .empty { text-align: center; padding: 48px; color: var(--muted); }
 #loading { text-align: center; padding: 48px; }
+
+/* Modal */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.modal-content { background: var(--white); border-radius: var(--radius); max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--linen); }
+.modal-header h2 { font-size: 1.2rem; }
+.modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); }
+.modal-close:hover { color: var(--ink); }
+#blogForm { padding: 24px; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; color: var(--ink); }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; }
+.form-group textarea { resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--linen); }
+.btn-danger { background: #dc3545; color: white; }
+.btn-sm { padding: 6px 12px; font-size: 0.85rem; }
 @media (max-width: 900px) {
   .admin-layout { grid-template-columns: 1fr; }
   .sidebar { display: none; }
@@ -61,6 +78,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
       <a href="#" data-section="bookings">📅 Boekingen</a>
       <a href="#" data-section="contacts">💬 Aanvragen</a>
       <a href="#" data-section="rooms">🛏️ Kamers</a>
+      <a href="#" data-section="blog">✍️ Blog</a>
     </nav>
     <div class="sidebar-footer">
       <a href="/" style="color:inherit;">← Naar website</a>
@@ -183,6 +201,92 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             <tbody id="roomsList">
             </tbody>
           </table>
+        </div>
+      </section>
+      
+      <!-- Blog Section -->
+      <section id="section-blog" class="section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Blog Artikelen</h2>
+            <button class="btn btn-gold" onclick="openBlogEditor()">+ Nieuw artikel</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Categorie</th>
+                <th>Status</th>
+                <th>Datum</th>
+                <th>Acties</th>
+              </tr>
+            </thead>
+            <tbody id="blogList">
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Blog Editor Modal -->
+        <div id="blogEditor" class="modal" style="display:none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 id="blogEditorTitle">Nieuw artikel</h2>
+              <button class="modal-close" onclick="closeBlogEditor()">&times;</button>
+            </div>
+            <form id="blogForm" onsubmit="saveBlogPost(event)">
+              <input type="hidden" id="blogId">
+              <div class="form-group">
+                <label>Titel *</label>
+                <input type="text" id="blogTitleInput" required>
+              </div>
+              <div class="form-group">
+                <label>Slug (URL)</label>
+                <input type="text" id="blogSlugInput" placeholder="wordt-automatisch-gegenereerd">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Categorie</label>
+                  <select id="blogCategoryInput">
+                    <option value="">Kies categorie...</option>
+                    <option value="seizoenen">Seizoenen & Weer</option>
+                    <option value="voedselbos">Voedselbos & Moestuin</option>
+                    <option value="ecologie">Ecologie & Duurzaamheid</option>
+                    <option value="teambuilding">Teambuilding & Zakelijk</option>
+                    <option value="feesten">Feesten & Events</option>
+                    <option value="leveranciers">Leveranciers & Partners</option>
+                    <option value="reportages">Reportages & Verhalen</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Status</label>
+                  <select id="blogStatusInput">
+                    <option value="draft">Concept</option>
+                    <option value="published">Gepubliceerd</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Samenvatting (voor overzicht)</label>
+                <textarea id="blogExcerptInput" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Inhoud * (HTML toegestaan)</label>
+                <textarea id="blogContentInput" rows="15" required></textarea>
+              </div>
+              <div class="form-group">
+                <label>Afbeelding URL</label>
+                <input type="text" id="blogImageInput" placeholder="/assets/img/voorbeeld.jpg">
+              </div>
+              <div class="form-group">
+                <label>Tags (komma-gescheiden)</label>
+                <input type="text" id="blogTagsInput" placeholder="lente, voedselbos, recepten">
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeBlogEditor()">Annuleren</button>
+                <button type="submit" class="btn btn-gold">Opslaan</button>
+              </div>
+            </form>
+          </div>
         </div>
       </section>
     </div>
@@ -339,8 +443,105 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (section === 'bookings') await loadBookings();
     if (section === 'contacts') await loadContacts();
     if (section === 'rooms') await loadRooms();
+    if (section === 'blog') await loadBlog();
   });
 });
+
+// Load blog posts
+async function loadBlog() {
+  const data = await api('/admin/blog');
+  const tbody = document.getElementById('blogList');
+  
+  if (data.ok && data.posts.length) {
+    tbody.innerHTML = data.posts.map(p => `
+      <tr>
+        <td><strong>${p.title}</strong><br><small>/${p.slug}</small></td>
+        <td>${p.category || '-'}</td>
+        <td><span class="badge badge-${p.status === 'published' ? 'confirmed' : 'pending'}">${p.status === 'published' ? 'Gepubliceerd' : 'Concept'}</span></td>
+        <td>${p.published_at ? new Date(p.published_at).toLocaleDateString('nl-BE') : '-'}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="editBlogPost(${p.id})">Bewerken</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBlogPost(${p.id})">Verwijderen</button>
+        </td>
+      </tr>
+    `).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Nog geen artikelen. Klik op "+ Nieuw artikel" om te beginnen.</td></tr>';
+  }
+}
+
+// Open blog editor
+function openBlogEditor(post = null) {
+  document.getElementById('blogEditor').style.display = 'flex';
+  document.getElementById('blogEditorTitle').textContent = post ? 'Artikel bewerken' : 'Nieuw artikel';
+  
+  if (post) {
+    document.getElementById('blogId').value = post.id;
+    document.getElementById('blogTitleInput').value = post.title;
+    document.getElementById('blogSlugInput').value = post.slug;
+    document.getElementById('blogCategoryInput').value = post.category || '';
+    document.getElementById('blogStatusInput').value = post.status;
+    document.getElementById('blogExcerptInput').value = post.excerpt || '';
+    document.getElementById('blogContentInput').value = post.content;
+    document.getElementById('blogImageInput').value = post.featured_image || '';
+    document.getElementById('blogTagsInput').value = post.tags || '';
+  } else {
+    document.getElementById('blogForm').reset();
+    document.getElementById('blogId').value = '';
+  }
+}
+
+function closeBlogEditor() {
+  document.getElementById('blogEditor').style.display = 'none';
+}
+
+// Edit blog post
+async function editBlogPost(id) {
+  const data = await api('/admin/blog/' + id);
+  if (data.ok) {
+    openBlogEditor(data.post);
+  }
+}
+
+// Save blog post
+async function saveBlogPost(e) {
+  e.preventDefault();
+  
+  const id = document.getElementById('blogId').value;
+  const post = {
+    title: document.getElementById('blogTitleInput').value,
+    slug: document.getElementById('blogSlugInput').value,
+    category: document.getElementById('blogCategoryInput').value,
+    status: document.getElementById('blogStatusInput').value,
+    excerpt: document.getElementById('blogExcerptInput').value,
+    content: document.getElementById('blogContentInput').value,
+    featured_image: document.getElementById('blogImageInput').value,
+    tags: document.getElementById('blogTagsInput').value
+  };
+  
+  const url = id ? '/admin/blog/' + id : '/admin/blog';
+  const method = id ? 'PUT' : 'POST';
+  
+  const data = await api(url, { method, body: JSON.stringify(post) });
+  
+  if (data.ok) {
+    closeBlogEditor();
+    await loadBlog();
+    alert(id ? 'Artikel bijgewerkt!' : 'Artikel aangemaakt!');
+  } else {
+    alert('Fout: ' + (data.error || 'Onbekende fout'));
+  }
+}
+
+// Delete blog post
+async function deleteBlogPost(id) {
+  if (!confirm('Weet je zeker dat je dit artikel wilt verwijderen?')) return;
+  
+  const data = await api('/admin/blog/' + id, { method: 'DELETE' });
+  if (data.ok) {
+    await loadBlog();
+  }
+}
 
 function logout() {
   sessionStorage.removeItem('wb_token');

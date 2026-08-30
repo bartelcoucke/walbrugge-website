@@ -80,6 +80,29 @@ db.exec(`
     images TEXT,
     available INTEGER DEFAULT 1
   );
+  
+  CREATE TABLE IF NOT EXISTS blog_posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    excerpt TEXT,
+    content TEXT NOT NULL,
+    category TEXT,
+    tags TEXT,
+    featured_image TEXT,
+    author TEXT DEFAULT 'Walbrugge',
+    status TEXT DEFAULT 'draft',
+    published_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  CREATE TABLE IF NOT EXISTS blog_categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    slug TEXT UNIQUE NOT NULL,
+    description TEXT
+  );
 `);
 
 // Insert admin user if not exists
@@ -399,6 +422,137 @@ app.get('/api/admin/stats', authMiddleware('admin'), (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// BLOG API ROUTES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Public: Get published blog posts
+app.get('/api/blog', (req, res) => {
+  const { category, limit = 10, offset = 0 } = req.query;
+  let query = "SELECT id, title, slug, excerpt, category, tags, featured_image, author, published_at FROM blog_posts WHERE status = 'published'";
+  const params = [];
+  
+  if (category) {
+    query += " AND category = ?";
+    params.push(category);
+  }
+  
+  query += " ORDER BY published_at DESC LIMIT ? OFFSET ?";
+  params.push(parseInt(limit), parseInt(offset));
+  
+  const posts = db.prepare(query).all(...params);
+  const total = db.prepare("SELECT COUNT(*) as c FROM blog_posts WHERE status = 'published'").get().c;
+  
+  res.json({ ok: true, posts, total });
+});
+
+// Public: Get single blog post by slug
+app.get('/api/blog/:slug', (req, res) => {
+  const post = db.prepare("SELECT * FROM blog_posts WHERE slug = ? AND status = 'published'").get(req.params.slug);
+  if (!post) {
+    return res.status(404).json({ error: 'Artikel niet gevonden' });
+  }
+  res.json({ ok: true, post });
+});
+
+// Public: Get blog categories
+app.get('/api/blog-categories', (req, res) => {
+  const categories = db.prepare("SELECT * FROM blog_categories ORDER BY name").all();
+  res.json({ ok: true, categories });
+});
+
+// Admin: Get all blog posts (including drafts)
+app.get('/api/admin/blog', authMiddleware('admin'), (req, res) => {
+  const posts = db.prepare("SELECT * FROM blog_posts ORDER BY created_at DESC").all();
+  res.json({ ok: true, posts });
+});
+
+// Admin: Get single blog post for editing
+app.get('/api/admin/blog/:id', authMiddleware('admin'), (req, res) => {
+  const post = db.prepare("SELECT * FROM blog_posts WHERE id = ?").get(req.params.id);
+  if (!post) {
+    return res.status(404).json({ error: 'Artikel niet gevonden' });
+  }
+  res.json({ ok: true, post });
+});
+
+// Admin: Create blog post
+app.post('/api/admin/blog', authMiddleware('admin'), (req, res) => {
+  const { title, slug, excerpt, content, category, tags, featured_image, status } = req.body;
+  
+  if (!title || !content) {
+    return res.status(400).json({ error: 'Titel en inhoud zijn verplicht' });
+  }
+  
+  // Generate slug if not provided
+  const finalSlug = slug || title.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  
+  try {
+    const published_at = status === 'published' ? new Date().toISOString() : null;
+    const result = db.prepare(`
+      INSERT INTO blog_posts (title, slug, excerpt, content, category, tags, featured_image, status, published_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(title, finalSlug, excerpt || null, content, category || null, tags || null, featured_image || null, status || 'draft', published_at);
+    
+    res.json({ ok: true, id: result.lastInsertRowid, slug: finalSlug });
+  } catch (e) {
+    if (e.message.includes('UNIQUE constraint')) {
+      return res.status(400).json({ error: 'Deze slug bestaat al' });
+    }
+    res.status(500).json({ error: 'Opslaan mislukt' });
+  }
+});
+
+// Admin: Update blog post
+app.put('/api/admin/blog/:id', authMiddleware('admin'), (req, res) => {
+  const { title, slug, excerpt, content, category, tags, featured_image, status } = req.body;
+  
+  const existing = db.prepare("SELECT * FROM blog_posts WHERE id = ?").get(req.params.id);
+  if (!existing) {
+    return res.status(404).json({ error: 'Artikel niet gevonden' });
+  }
+  
+  // Set published_at when first publishing
+  let published_at = existing.published_at;
+  if (status === 'published' && !existing.published_at) {
+    published_at = new Date().toISOString();
+  }
+  
+  try {
+    db.prepare(`
+      UPDATE blog_posts 
+      SET title = ?, slug = ?, excerpt = ?, content = ?, category = ?, tags = ?, 
+          featured_image = ?, status = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(title, slug, excerpt, content, category, tags, featured_image, status, published_at, req.params.id);
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Update mislukt' });
+  }
+});
+
+// Admin: Delete blog post
+app.delete('/api/admin/blog/:id', authMiddleware('admin'), (req, res) => {
+  db.prepare("DELETE FROM blog_posts WHERE id = ?").run(req.params.id);
+  res.json({ ok: true });
+});
+
+// Admin: Manage categories
+app.post('/api/admin/blog-categories', authMiddleware('admin'), (req, res) => {
+  const { name } = req.body;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  
+  try {
+    db.prepare("INSERT INTO blog_categories (name, slug) VALUES (?, ?)").run(name, slug);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: 'Categorie bestaat al' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // REDIRECTS (oude URLs naar nieuwe)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -413,7 +567,7 @@ app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Serve specific HTML pages
-const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'login', 'admin'];
+const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'login', 'admin', 'blog'];
 
 pages.forEach(page => {
   app.get(`/${page}`, (req, res) => {
@@ -467,6 +621,11 @@ ruimtes.forEach(ruimte => {
       res.sendFile(path.join(__dirname, '..', 'public', 'teams.html'));
     }
   });
+});
+
+// Blog article pages
+app.get('/blog/:slug', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'blog-article.html'));
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

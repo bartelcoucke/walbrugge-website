@@ -205,6 +205,13 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://walbrugge.be/offerte"/>
   </url>
 
+  <!-- Blog -->
+  <url>
+    <loc>https://walbrugge.be/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Ruimtes -->
   <url>
     <loc>https://walbrugge.be/ruimtes/panoramische-zaal</loc>
