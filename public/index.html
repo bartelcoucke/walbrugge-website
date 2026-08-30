@@ -53,6 +53,65 @@
     "postalCode": "8573",
     "addressRegion": "West-Vlaanderen",
     "addressCountry": "BE"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": 50.8234,
+    "longitude": 3.4567
+  },
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    "opens": "09:00",
+    "closes": "22:00"
+  },
+  "priceRange": "€€€",
+  "image": "https://walbrugge.be/assets/img/hero.jpg",
+  "sameAs": [
+    "https://www.facebook.com/walbrugge",
+    "https://www.instagram.com/walbrugge"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "EventVenue",
+  "name": "Domein Walbrugge",
+  "description": "Exclusief afhuurbaar domein voor feesten, vergaderingen en teambuildings",
+  "url": "https://walbrugge.be",
+  "maximumAttendeeCapacity": 100,
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Walbrugge 36",
+    "addressLocality": "Anzegem",
+    "postalCode": "8573",
+    "addressCountry": "BE"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LodgingBusiness",
+  "name": "B&B domein Walbrugge",
+  "description": "Vijf ambachtelijke B&B-kamers in een 18e-eeuwse hoeve aan de Tiegemberg",
+  "url": "https://walbrugge.be/bb",
+  "numberOfRooms": 5,
+  "checkinTime": "16:00",
+  "checkoutTime": "11:00",
+  "amenityFeature": [
+    {"@type": "LocationFeatureSpecification", "name": "Gratis WiFi", "value": true},
+    {"@type": "LocationFeatureSpecification", "name": "Gratis Parking", "value": true},
+    {"@type": "LocationFeatureSpecification", "name": "Ontbijt inbegrepen", "value": true},
+    {"@type": "LocationFeatureSpecification", "name": "Laadpalen", "value": true}
+  ],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Walbrugge 36",
+    "addressLocality": "Anzegem",
+    "postalCode": "8573",
+    "addressCountry": "BE"
   }
 }
 </script>
@@ -60,230 +119,6 @@
 <link rel="alternate" hreflang="fr" href="https://walbrugge.be/fr">
 <link rel="alternate" hreflang="en" href="https://walbrugge.be/en">
 <link rel="alternate" hreflang="x-default" href="https://walbrugge.be/">
-
-<style>
-/* Hero redesign */
-.hero-new {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.hero-new .hero-bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  z-index: 0;
-}
-
-.hero-new .hero-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 1;
-}
-
-.hero-new .hero-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(45,58,40,0.7) 0%, rgba(0,0,0,0.4) 100%);
-  z-index: 2;
-}
-
-.hero-new .hero-content {
-  position: relative;
-  z-index: 3;
-  text-align: center;
-  color: #fff;
-  padding: 40px 20px;
-  max-width: 900px;
-}
-
-.hero-tagline {
-  font-family: var(--font-sans);
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-  color: var(--gold-light);
-  margin-bottom: 20px;
-  opacity: 0.9;
-}
-
-.hero-pillars {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  margin-bottom: 30px;
-}
-
-.hero-pillar {
-  font-family: var(--font-serif);
-  font-size: 2.5rem;
-  font-weight: 600;
-  color: #fff;
-  position: relative;
-}
-
-.hero-pillar::after {
-  content: '·';
-  position: absolute;
-  right: -26px;
-  color: var(--gold);
-}
-
-.hero-pillar:last-child::after {
-  display: none;
-}
-
-.hero-quote {
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  font-style: italic;
-  line-height: 1.5;
-  max-width: 700px;
-  margin: 0 auto 30px;
-  color: rgba(255,255,255,0.95);
-}
-
-.hero-subtitle {
-  font-size: 1.1rem;
-  color: rgba(255,255,255,0.8);
-  margin-bottom: 40px;
-  line-height: 1.6;
-}
-
-.hero-cta-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-/* Awards als stempels rechts */
-.hero-stamps {
-  position: absolute;
-  right: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.hero-stamp {
-  background: rgba(255,255,255,0.95);
-  border-radius: 8px;
-  padding: 12px 16px;
-  text-decoration: none;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-  transition: all 0.3s ease;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.hero-stamp:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 30px rgba(0,0,0,0.3);
-}
-
-.hero-stamp img {
-  height: 28px;
-  width: auto;
-}
-
-.hero-stamp .stamp-score {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--gold-dark);
-}
-
-.hero-stamp-booking {
-  background: #003580;
-  color: #fff;
-}
-
-.hero-stamp-booking .stamp-score {
-  background: #fff;
-  color: #003580;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-/* Nav logo fix */
-.nav-logo-large {
-  height: auto !important;
-}
-
-.nav-logo-large img {
-  height: 60px !important;
-  width: auto !important;
-  padding: 8px 0;
-}
-
-@media (max-width: 1024px) {
-  .hero-stamps {
-    position: relative;
-    right: auto;
-    top: auto;
-    transform: none;
-    flex-direction: row;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 40px;
-  }
-  
-  .hero-pillar {
-    font-size: 1.8rem;
-  }
-  
-  .hero-pillars {
-    gap: 25px;
-  }
-  
-  .hero-pillar::after {
-    right: -18px;
-  }
-}
-
-@media (max-width: 768px) {
-  .hero-pillars {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .hero-pillar::after {
-    display: none;
-  }
-  
-  .hero-pillar {
-    font-size: 2rem;
-  }
-  
-  .hero-quote {
-    font-size: 1.3rem;
-  }
-  
-  .hero-stamps {
-    gap: 10px;
-  }
-  
-  .hero-stamp {
-    font-size: 0.75rem;
-    padding: 10px 12px;
-  }
-}
-</style>
 </head>
 <body>
 
@@ -292,8 +127,8 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="/" class="nav-logo nav-logo-large" aria-label="Domein Walbrugge Home">
-      <img src="/assets/img/logo.png" alt="Domein Walbrugge">
+    <a href="/" class="nav-logo" aria-label="Domein Walbrugge Home">
+      <img src="/assets/img/walbrugge_logo_round.png" alt="Domein Walbrugge" width="72" height="72">
     </a>
     <nav class="nav-links" id="navLinks" aria-label="Hoofdnavigatie">
       <a href="/teams">Teams & Organisaties</a>
@@ -309,65 +144,48 @@
 </header>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- HERO - Nieuwe versie                                                    -->
+<!-- HERO                                                                    -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<section class="hero hero-new" id="top">
+<section class="hero" id="top">
   <div class="hero-bg" style="background-image:url('/assets/img/hero.jpg')" role="img" aria-label="Luchtfoto van domein Walbrugge">
     <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="/assets/img/hero.jpg" aria-hidden="true">
       <source src="/assets/video/walbrugge_720p.mp4" type="video/mp4">
     </video>
   </div>
   <div class="hero-overlay"></div>
-  
   <div class="hero-content">
-    <p class="hero-tagline">Domein Walbrugge · Tiegem</p>
-    
-    <div class="hero-pillars">
-      <span class="hero-pillar">Werken</span>
-      <span class="hero-pillar">Feesten</span>
-      <span class="hero-pillar">Slapen</span>
-    </div>
-    
-    <p class="hero-quote">"Waar de rust van het platteland samenkomt met de grandeur van een 18e-eeuwse hoeve"</p>
-    
-    <p class="hero-subtitle">Een exclusief domein aan de voet van de Tiegemberg — voor vergaderingen die inspireren, feesten die beklijven, en nachten die tot rust brengen.</p>
-    
-    <div class="hero-cta-buttons">
-      <a href="/offerte" class="btn btn-gold btn-lg">Offerte aanvragen</a>
-      <a href="#ontdek" class="btn btn-outline-light btn-lg">Ontdek het domein</a>
+    <p class="hero-kicker">Domein Walbrugge · Tiegem, Anzegem</p>
+    <p class="hero-sub">Onvergetelijke en unieke feesten, sfeervolle overnachtingen midden in de natuur, en inspirerende zakelijke bijeenkomsten aan de voet van Tiegemberg.</p>
+    <div class="hero-awards">
+      <a href="https://www.salino.be/nl/locaties/6318-walbrugge/?asi=26135523" target="_blank" rel="noopener" class="hero-award-badge hero-award-salino">
+        <img src="/assets/img/salino-award-2025.svg" alt="Salino Award — Beste eventlocatie van 2025">
+        <span class="hero-award-score">9,5/10</span>
+      </a>
+      <a href="https://www.booking.com/hotel/be/walbrugge.nl.html" target="_blank" rel="noopener" class="hero-award-badge hero-award-booking" id="bookingBadge">
+        <img src="/assets/img/booking-logo.png" alt="Booking.com" class="booking-logo">
+        <span class="booking-text">
+          <span class="booking-word">Voortreffelijk</span>
+          <span class="hero-award-caption">100+ reviews</span>
+        </span>
+        <span class="booking-score">9,7</span>
+      </a>
+      <a href="https://www.eventplanner.be/directory/13607_walbrugge.html" target="_blank" rel="noopener" class="hero-award-badge hero-award-ep">
+        <img src="/assets/img/eventplanner-logo.svg" alt="eventplanner.be" class="ep-logo"> 10/10
+      </a>
     </div>
   </div>
-  
-  <!-- Kwaliteitsstempels rechts -->
-  <div class="hero-stamps">
-    <a href="https://www.salino.be/nl/locaties/6318-walbrugge/" target="_blank" rel="noopener" class="hero-stamp">
-      <img src="/assets/img/salino-award-2025.svg" alt="Salino Award">
-      <span>Best of 2025</span>
-      <span class="stamp-score">9,5</span>
-    </a>
-    <a href="https://www.booking.com/hotel/be/walbrugge.nl.html" target="_blank" rel="noopener" class="hero-stamp hero-stamp-booking">
-      <img src="/assets/img/booking-logo.png" alt="Booking.com" style="height:20px;filter:brightness(0) invert(1);">
-      <span>Voortreffelijk</span>
-      <span class="stamp-score">9,7</span>
-    </a>
-    <a href="https://www.eventplanner.be/directory/13607_walbrugge.html" target="_blank" rel="noopener" class="hero-stamp">
-      <img src="/assets/img/eventplanner-logo.svg" alt="Eventplanner.be">
-      <span class="stamp-score">10/10</span>
-    </a>
-  </div>
-  
-  <a href="#ontdek" class="hero-scroll" aria-label="Scroll naar beneden"><span></span></a>
+  <a href="#keuze" class="hero-scroll" aria-label="Scroll naar beneden"><span></span></a>
 </section>
 
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- DRIELEDIGE KEUZE                                                        -->
+<!-- DRIELEDIGE KEUZE (volgorde: Teams → Feesten → B&B)                      -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<section class="section keuze-section" id="ontdek">
+<section class="section keuze-section" id="keuze">
   <div class="container">
     <div class="keuze-grid">
       
-      <!-- 1. TEAMS & ORGANISATIES -->
+      <!-- 1. TEAMS & ORGANISATIES (featured, eerst) -->
       <article class="keuze-card keuze-card-featured">
         <div class="keuze-badge">Dagformules beschikbaar</div>
         <div class="keuze-icon">🏢</div>
@@ -429,22 +247,54 @@
         <div class="stat"><span class="stat-num">6</span><span class="stat-label">Ruimtes</span></div>
         <div class="stat"><span class="stat-num">100</span><span class="stat-label">Personen max.</span></div>
         <div class="stat"><span class="stat-num">5</span><span class="stat-label">B&B-kamers</span></div>
-        <div class="stat"><span class="stat-num">1753</span><span class="stat-label">Bouwjaar</span></div>
+        <div class="stat"><span class="stat-num">18<sup>e</sup></span><span class="stat-label">Eeuwse hoeve</span></div>
       </div>
     </div>
   </div>
 </section>
 
-
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- REVIEWS                                                                 -->
+<!-- AWARDS & REVIEWS SECTIE                                                 -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<section class="section">
+<section class="section awards-section" id="awards">
   <div class="container">
-    <h2 class="section-title center">Wat onze gasten zeggen</h2>
-    <div class="reviews-grid">
+    <p class="kicker center">Erkend & Gewaardeerd</p>
+    <h2 class="center">Wat gasten en platforms over ons zeggen</h2>
+
+    <div class="awards-grid">
+      <!-- Salino Award -->
+      <a href="https://www.salino.be/nl/locaties/6318-walbrugge/?asi=26135523" target="_blank" rel="noopener" class="award-card award-salino">
+        <img src="/assets/img/salino-award-2025.svg" alt="Salino Award — Beste eventlocatie van 2025" class="salino-logo">
+        <div class="award-score">9,5<span>/10</span></div>
+        <p class="award-desc">Bekroond als top evenementenlocatie</p>
+      </a>
+
+      <!-- Booking.com -->
+      <a href="https://www.booking.com/hotel/be/walbrugge.nl.html" target="_blank" rel="noopener" class="award-card js-booking-link">
+        <div class="award-icon">
+          <img src="/assets/img/booking-logo-full.svg" alt="Booking.com" class="award-booking-full">
+        </div>
+        <div class="award-review-row">
+          <span class="award-review-word">Voortreffelijk</span>
+          <span class="award-score-tile">9,7</span>
+        </div>
+        <p class="award-desc">100+ reviews op Booking.com</p>
+      </a>
+
+      <!-- Eventplanner -->
+      <a href="https://www.eventplanner.be/directory/13607_walbrugge.html" target="_blank" rel="noopener" class="award-card">
+        <div class="award-icon">
+          <img src="/assets/img/eventplanner-logo.svg" alt="eventplanner.be" class="award-ep-logo">
+        </div>
+        <div class="award-score">10<span>/10</span></div>
+        <p class="award-desc">Topscore gegeven door organisatoren</p>
+      </a>
+    </div>
+
+    <!-- Reviews -->
+    <div class="reviews-highlight">
       <blockquote class="review-quote">
-        <p>"Onze teambuilding bij Walbrugge was de beste die we ooit gehad hebben. De combinatie van goede vergaderfaciliteiten, heerlijke catering en de prachtige omgeving maakte het een onvergetelijke dag."</p>
+        <p>"De exclusiviteit van het domein maakte dat iedereen zich kon focussen. De vergaderzaal was perfect uitgerust, en 's avonds hebben we gedineerd onder de sterren op het terras."</p>
         <footer>— <strong>Sarah V.</strong>, Manager logistiek bedrijf</footer>
       </blockquote>
       <blockquote class="review-quote">
@@ -480,8 +330,8 @@
       <h2>Klaar om domein Walbrugge te ontdekken?</h2>
       <p>Vertel ons wat u plant — een feest, een verblijf of een vergadering — en we bezorgen u snel een voorstel op maat.</p>
       <div class="cta-buttons">
-        <a href="/offerte" class="btn btn-gold btn-lg">Offerte aanvragen</a>
-        <a href="tel:+32485887723" class="btn btn-outline-dark btn-lg">Bel +32 485 88 77 23</a>
+        <a href="/offerte" class="btn btn-gold btn-lg">Vraag een offerte aan</a>
+        <a href="/contact" class="btn btn-ghost btn-lg">Neem contact op</a>
       </div>
     </div>
   </div>
@@ -504,7 +354,6 @@
           <li><a href="/teams">Teams & Organisaties</a></li>
           <li><a href="/feesten">Feesten & Samenzijn</a></li>
           <li><a href="/bb">Boutique B&B</a></li>
-          <li><a href="/over-ons">Over ons</a></li>
         </ul>
       </div>
       
@@ -546,15 +395,16 @@
   </div>
 </footer>
 
-<!-- WhatsApp + Messenger -->
-<a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat via WhatsApp">
-  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" fill="currentColor"/></svg>
-</a>
-
-<a href="https://m.me/walbrugge" class="messenger-btn" target="_blank" rel="noopener" aria-label="Chat via Messenger">
-  <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.301 2.246.464 3.443.464 6.627 0 12-4.974 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8l3.131 3.259L19.752 8l-6.561 6.963z" fill="currentColor"/></svg>
-</a>
-
+<!-- Scripts -->
 <script src="/assets/js/app.js" defer></script>
+
+<!-- WhatsApp Button -->
+<a href="https://m.me/walbrugge" class="messenger-btn" target="_blank" rel="noopener" aria-label="Chat via Facebook Messenger">
+  <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 4.975 0 11.111c0 3.497 1.745 6.616 4.472 8.652V24l4.086-2.242c1.09.301 2.246.464 3.442.464 6.627 0 12-4.974 12-11.111C24 4.975 18.627 0 12 0zm1.193 14.963l-3.056-3.259-5.963 3.259L10.733 8l3.13 3.259L19.752 8l-6.559 6.963z" fill="currentColor"/></svg>
+</a>
+<a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat via WhatsApp">
+  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
 </body>
 </html>
