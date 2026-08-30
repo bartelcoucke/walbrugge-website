@@ -1065,6 +1065,33 @@ p { margin-bottom: 1rem; }
   fill: #fff;
 }
 
+.messenger-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 104px;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #00B2FF 0%, #006AFF 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 106, 255, 0.4);
+  z-index: 999;
+  transition: all var(--transition);
+}
+
+.messenger-btn:hover {
+  transform: scale(1.1) translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 106, 255, 0.5);
+}
+
+.messenger-btn svg {
+  width: 32px;
+  height: 32px;
+  fill: #fff;
+}
+
 /* ── Mobile Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .keuze-grid { 
@@ -1117,6 +1144,8 @@ p { margin-bottom: 1rem; }
   .cta-buttons { flex-direction: column; }
   .whatsapp-btn { bottom: 20px; right: 20px; width: 56px; height: 56px; }
   .whatsapp-btn svg { width: 28px; height: 28px; }
+  .messenger-btn { bottom: 20px; right: 88px; width: 56px; height: 56px; }
+  .messenger-btn svg { width: 26px; height: 26px; }
 }
 
 /* ── Utilities ────────────────────────────────────────────────────────────── */
