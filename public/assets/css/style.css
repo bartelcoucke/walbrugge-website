@@ -2950,6 +2950,78 @@ a.hero-award-badge:hover {
   text-shadow: none;
 }
 
+.ep-icon {
+  height: 20px;
+  width: 20px;
+  vertical-align: middle;
+}
+
+/* Compacte awards-strook op de offertepagina */
+.page-header-compact {
+  padding: 130px 0 30px;
+}
+
+.offerte-awards {
+  padding: 40px 0 0;
+}
+
+.offerte-awards .awards-grid {
+  max-width: 660px;
+  gap: 16px;
+  margin-top: 0;
+}
+
+.offerte-awards .award-card {
+  padding: 8px 14px;
+}
+
+.offerte-awards .salino-logo {
+  height: 30px !important;
+  margin-bottom: 4px !important;
+}
+
+.offerte-awards .award-booking-full {
+  height: 17px;
+}
+
+.offerte-awards .award-ep-logo {
+  height: 19px;
+}
+
+.offerte-awards .award-score {
+  font-size: 1.35rem;
+}
+
+.offerte-awards .award-score-tile {
+  font-size: 0.85rem;
+  padding: 5px 6px;
+}
+
+.offerte-awards .award-review-label,
+.offerte-awards .award-desc {
+  font-size: 0.7rem;
+}
+
+.offerte-awards .award-review-word {
+  font-size: 0.78rem;
+}
+
+.offerte-awards .award-icon {
+  margin-bottom: 2px;
+}
+
+.offerte-awards .award-review-row {
+  margin: 2px 0;
+}
+
+.offerte-awards .award-score-row {
+  margin-top: 2px;
+}
+
+.offerte-awards + .section {
+  padding-top: 34px;
+}
+
 @media (max-width: 600px) {
   .hero-proof {
     flex-direction: column;
