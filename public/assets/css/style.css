@@ -2871,6 +2871,21 @@ a.hero-award-badge:hover {
   margin-top: 4px;
 }
 
+.stamp-score small {
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.stamp-sub {
+  font-size: 0.62rem;
+  letter-spacing: 0.5px;
+  opacity: 0.95;
+  margin-top: 2px;
+  white-space: nowrap;
+  color: var(--gold-light);
+}
+
 /* Responsive stempels */
 @media (max-width: 1024px) {
   .hero-stamps {
