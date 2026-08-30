@@ -25,8 +25,6 @@
       nav.classList.remove('scrolled');
     }
     
-    }
-    
     // Fade hero content on scroll
     const heroContent = document.querySelector('.hero-content');
     if (heroContent && currentScroll < window.innerHeight) {
