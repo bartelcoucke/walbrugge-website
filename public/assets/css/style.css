@@ -1443,6 +1443,19 @@ a.award-card {
   margin: 4px 0 4px;
 }
 
+.award-score-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.award-score-row .award-review-label,
+.award-score-row .award-score {
+  margin: 0;
+}
+
 .award-score span {
   font-size: 1.2rem;
   font-weight: 400;
