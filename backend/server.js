@@ -133,6 +133,23 @@ if (roomCount === 0) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Dynamische sitemap: statische paginas + gepubliceerde blogartikels
+app.get('/sitemap.xml', (req, res) => {
+  const staticSitemap = fs.readFileSync(path.join(__dirname, '..', 'public', 'sitemap.xml'), 'utf-8');
+  let blogUrls = '';
+  try {
+    const posts = db.prepare("SELECT slug, updated_at, published_at, created_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC").all();
+    blogUrls = posts.map(p => {
+      const lastmod = (p.updated_at || p.published_at || p.created_at || '').slice(0, 10);
+      return `  <url>\n    <loc>https://walbrugge.be/blog/${p.slug}</loc>\n${lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : ''}    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>`;
+    }).join('\n');
+  } catch (e) { /* blog tabel nog niet beschikbaar */ }
+  const xml = blogUrls
+    ? staticSitemap.replace('</urlset>', blogUrls + '\n</urlset>')
+    : staticSitemap;
+  res.type('application/xml').send(xml);
+});
+
 // Static files
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
@@ -623,9 +640,52 @@ ruimtes.forEach(ruimte => {
   });
 });
 
-// Blog article pages
+// Blog article pages — server-side SEO meta injectie per artikel
 app.get('/blog/:slug', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'blog-article.html'));
+  const templatePath = path.join(__dirname, '..', 'public', 'blog-article.html');
+  const post = db.prepare("SELECT * FROM blog_posts WHERE slug = ? AND status = 'published'").get(req.params.slug);
+  if (!post) {
+    return res.sendFile(templatePath);
+  }
+  let html = fs.readFileSync(templatePath, 'utf-8');
+  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const title = esc(post.title) + ' · Blog · domein Walbrugge';
+  const desc = esc(post.excerpt || (post.content || '').replace(/<[^>]*>/g, '').slice(0, 155));
+  const url = `https://walbrugge.be/blog/${post.slug}`;
+  const img = post.image ? (post.image.startsWith('http') ? post.image : 'https://walbrugge.be' + post.image) : 'https://walbrugge.be/assets/img/og-image.jpg';
+  const articleLd = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || undefined,
+    image: img,
+    url,
+    datePublished: post.published_at || post.created_at,
+    dateModified: post.updated_at || post.published_at || post.created_at,
+    author: { '@type': 'Organization', name: 'Domein Walbrugge', url: 'https://walbrugge.be' },
+    publisher: { '@type': 'Organization', name: 'Domein Walbrugge', logo: { '@type': 'ImageObject', url: 'https://walbrugge.be/assets/img/logo.png' } },
+    mainEntityOfPage: url
+  });
+  const seoBlock = `<title>${title}</title>
+<meta name="description" content="${desc}">
+<link rel="canonical" href="${url}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:image" content="${img}">
+<meta property="og:url" content="${url}">
+<meta property="og:type" content="article">
+<meta property="og:locale" content="nl_BE">
+<meta property="og:site_name" content="Domein Walbrugge">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${desc}">
+<meta name="twitter:image" content="${img}">
+<script type="application/ld+json">${articleLd}</script>`;
+  // Vervang bestaande <title> en injecteer de rest vóór </head>
+  html = html.replace(/<title>[\s\S]*?<\/title>/, '');
+  html = html.replace(/<meta name="description"[^>]*>/, '');
+  html = html.replace('</head>', seoBlock + '\n</head>');
+  res.send(html);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
