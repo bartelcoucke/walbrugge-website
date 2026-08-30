@@ -2767,3 +2767,60 @@ a.hero-award-badge:hover {
     font-size: 1.8rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADDITIONAL BUTTONS & MESSENGER
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.btn-outline-light {
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.8);
+  color: #fff;
+}
+
+.btn-outline-light:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: #fff;
+  color: #fff;
+}
+
+.messenger-btn {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #00B2FF, #006AFF);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 106, 255, 0.4);
+  z-index: 1000;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.messenger-btn svg {
+  width: 28px;
+  height: 28px;
+  fill: white;
+}
+
+.messenger-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(0, 106, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+  .messenger-btn {
+    width: 48px;
+    height: 48px;
+    bottom: 80px;
+    right: 16px;
+  }
+  
+  .messenger-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+}
