@@ -2886,6 +2886,35 @@ a.hero-award-badge:hover {
   color: var(--gold-light);
 }
 
+/* Stempels met de inhoud/kleuren van de oorspronkelijke award-knoppen */
+.stamp-light {
+  background: rgba(255, 253, 248, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: var(--green-dark);
+  gap: 5px;
+  min-width: 160px;
+}
+
+.stamp-light:hover {
+  background: rgba(255, 253, 248, 0.92);
+  transform: scale(1.05);
+}
+
+.stamp-salino {
+  border-color: rgba(184, 134, 11, 0.6);
+}
+
+.stamp-salino img {
+  height: 32px;
+  width: auto;
+}
+
+.stamp-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* Responsive stempels */
 @media (max-width: 1024px) {
   .hero-stamps {
