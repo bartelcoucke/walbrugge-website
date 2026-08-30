@@ -2909,16 +2909,22 @@ a.hero-award-badge:hover {
 
 /* Proof-regel in de hero: één subtiele witte regel onder de knoppen */
 .hero-proof {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 14px;
   margin-top: 26px;
   font-size: 0.95rem;
   color: #fff;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
   letter-spacing: 0.02em;
+  background: rgba(18, 22, 16, 0.32);
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  padding: 10px 24px;
 }
 
 .hero-proof a {
@@ -3062,6 +3068,11 @@ a.hero-award-badge:hover {
   .hero-proof {
     flex-direction: column;
     gap: 10px;
+  }
+  .hero-proof a {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 2px;
   }
   .hero-proof-sep {
     display: none;
