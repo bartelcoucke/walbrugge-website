@@ -1642,6 +1642,7 @@ a.award-card {
 .reviews-highlight {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  align-items: start;
   gap: 32px;
   margin-top: 48px;
   max-width: 900px;
