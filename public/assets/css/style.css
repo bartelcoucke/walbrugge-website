@@ -3038,6 +3038,22 @@ a.hero-award-badge:hover {
   margin-top: 2px;
 }
 
+/* Eventplanner-tegel: inhoud verticaal centreren, meer lucht onder het logo */
+.offerte-awards .award-card:nth-child(3) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.offerte-awards .award-card:nth-child(3) .award-icon {
+  margin-bottom: 8px;
+}
+
+.offerte-awards .award-card:nth-child(3) .award-score-row {
+  margin-top: 0;
+}
+
 .offerte-awards + .section {
   padding-top: 34px;
 }
