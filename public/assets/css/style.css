@@ -994,7 +994,6 @@ header.nav,
   object-fit: contain;
   border-radius: 0;
   margin-bottom: 20px;
-  filter: brightness(0) invert(1);
 }
 
 .footer-brand p {
