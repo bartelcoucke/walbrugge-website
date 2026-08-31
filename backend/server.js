@@ -584,7 +584,7 @@ app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Serve specific HTML pages
-const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'login', 'admin', 'blog'];
+const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'algemene-voorwaarden', 'login', 'admin', 'blog'];
 
 pages.forEach(page => {
   app.get(`/${page}`, (req, res) => {
