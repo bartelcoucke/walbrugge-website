@@ -531,8 +531,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     slider.querySelector('.zaal-slider-prev').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); goTo(current - 1); });
     slider.querySelector('.zaal-slider-next').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); goTo(current + 1); });
-
-    setInterval(() => goTo(current + 1), 4000);
   });
 });
 </script>
