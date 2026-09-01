@@ -159,36 +159,41 @@
   }
 
   // ── Smooth number counter for stats ────────────────────────────────────────
-  const animateCounter = (element, target) => {
+  const animateCounter = (element, target, decimals = 0, sep = '.') => {
     const duration = 2000;
     const start = 0;
     const startTime = performance.now();
-    
+    const fmt = (v) => decimals > 0 ? v.toFixed(decimals).replace('.', sep) : String(Math.floor(v));
+
     const updateCounter = (currentTime) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       const easeOut = 1 - Math.pow(1 - progress, 3);
-      const current = Math.floor(start + (target - start) * easeOut);
-      
-      element.textContent = current;
-      
+      const current = start + (target - start) * easeOut;
+
+      element.textContent = fmt(current);
+
       if (progress < 1) {
         requestAnimationFrame(updateCounter);
       } else {
-        element.textContent = target;
+        element.textContent = fmt(target);
       }
     };
-    
+
     requestAnimationFrame(updateCounter);
   };
 
-  // Observe stat numbers
+  // Observe stat numbers (ondersteunt ook decimalen zoals "9,7")
   document.querySelectorAll('.stat-num').forEach(stat => {
-    const target = parseInt(stat.textContent);
+    const raw = stat.textContent.trim();
+    if (!/^\d+([.,]\d+)?$/.test(raw)) return;
+    const sep = raw.includes(',') ? ',' : '.';
+    const decimals = (raw.split(/[.,]/)[1] || '').length;
+    const target = parseFloat(raw.replace(',', '.'));
     if (!isNaN(target)) {
       const observer = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting) {
-          animateCounter(stat, target);
+          animateCounter(stat, target, decimals, sep);
           observer.unobserve(stat);
         }
       }, { threshold: 0.5 });
