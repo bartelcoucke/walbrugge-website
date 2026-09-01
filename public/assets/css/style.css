@@ -3222,3 +3222,15 @@ a.hero-award-badge:hover {
 .contact-message .contact-block { margin-bottom: 0; }
 /* Contactpagina: Kamer boeken-knop boven de award-tiles */
 .contact-book { padding: 36px 0 0; text-align: center; }
+/* Knop-pijltjes die van links naar rechts oplichten (B&B 'Boek nu') */
+.btn-arrows { display: inline-flex; margin-left: 0.15em; font-weight: 700; font-size: 1.25em; line-height: 1; }
+.btn-arrows i { font-style: normal; opacity: 0.35; animation: arrowGlow 1.4s ease-in-out infinite; }
+.btn-arrows i:nth-child(2) { animation-delay: 0.25s; }
+@keyframes arrowGlow {
+  0%, 100% { opacity: 0.35; transform: translateX(0); }
+  35%      { opacity: 1;    transform: translateX(2px); }
+  70%      { opacity: 0.35; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-arrows i { animation: none; opacity: 1; }
+}
