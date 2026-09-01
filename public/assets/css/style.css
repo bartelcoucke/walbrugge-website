@@ -3216,3 +3216,7 @@ a.hero-award-badge:hover {
 .contact-chat-ico { width: 1.15em; height: 1.15em; vertical-align: -0.18em; margin-right: 0.25em; display: inline-block; }
 .contact-note-inline { font-size: 0.85em; opacity: 0.7; }
 .contact-block .aside-direct-link { display: inline-flex; vertical-align: middle; }
+
+/* Contactpagina: berichtsectie direct onder de award-tiles */
+.contact-message { padding: 28px 0 0; }
+.contact-message .contact-block { margin-bottom: 0; }
