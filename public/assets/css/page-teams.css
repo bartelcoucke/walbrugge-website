@@ -181,6 +181,20 @@
   transform: scale(1.08);
 }
 
+/* Tegel zonder eigen pagina (Terras): niet klikbaar, geen hover-lift */
+.zaal-card-static {
+  cursor: default;
+}
+
+.zaal-card-static .zaal-card:hover {
+  transform: none;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+.zaal-card-static .zaal-card:hover .zaal-image img {
+  transform: none;
+}
+
 .zaal-cap {
   position: absolute;
   top: 12px;
