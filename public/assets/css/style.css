@@ -3234,3 +3234,6 @@ a.hero-award-badge:hover {
 @media (prefers-reduced-motion: reduce) {
   .btn-arrows i { animation: none; opacity: 1; }
 }
+/* CTA: award-knoppen dichter bij het telefoonnummer erboven */
+.cta-block p + .hero-proof { margin-top: 0; }
+.cta-block p:has(+ .hero-proof) { margin-bottom: 14px; }
