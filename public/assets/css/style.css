@@ -3220,3 +3220,5 @@ a.hero-award-badge:hover {
 /* Contactpagina: berichtsectie direct onder de award-tiles */
 .contact-message { padding: 28px 0 0; }
 .contact-message .contact-block { margin-bottom: 0; }
+/* Contactpagina: Kamer boeken-knop boven de award-tiles */
+.contact-book { padding: 36px 0 0; text-align: center; }
