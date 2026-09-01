@@ -3215,3 +3215,4 @@ a.hero-award-badge:hover {
 /* Contact: chat-iconen (WhatsApp / Messenger) */
 .contact-chat-ico { width: 1.15em; height: 1.15em; vertical-align: -0.18em; margin-right: 0.25em; display: inline-block; }
 .contact-note-inline { font-size: 0.85em; opacity: 0.7; }
+.contact-block .aside-direct-link { display: inline-flex; vertical-align: middle; }
