@@ -693,25 +693,36 @@ app.get('/blog/:slug', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const languages = ['fr', 'en', 'de'];
+
+// Gepensioneerde URLs: in NL redirecten deze al naar de nieuwe pagina.
+// Per taal hetzelfde gedrag, zodat /fr/feestzaal niet langer NL-content op 200 serveert.
+const retiredPages = { feestzaal: 'feesten', zakelijk: 'teams' };
+
 languages.forEach(lang => {
-  const serveLang = (relPath, nlFallback) => (req, res) => {
+  // Serveer enkel de vertaalde pagina. Bestaat die niet, dan 301 naar de NL-versie:
+  // nooit NL-content onder een anderstalige URL met status 200 (duplicate content).
+  const serveLang = (relPath, nlPath) => (req, res) => {
     const file = path.join(__dirname, '..', 'public', lang, relPath);
     if (fs.existsSync(file)) {
       return res.sendFile(file);
     }
-    const nlFile = path.join(__dirname, '..', 'public', nlFallback);
-    if (fs.existsSync(nlFile)) {
-      return res.sendFile(nlFile);
-    }
-    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+    return res.redirect(301, nlPath);
   };
 
-  app.get(`/${lang}`, serveLang('index.html', 'index.html'));
-  pages.forEach(page => {
-    app.get(`/${lang}/${page}`, serveLang(`${page}.html`, `${page}.html`));
+  app.get(`/${lang}`, serveLang('index.html', '/'));
+
+  // Eerst de gepensioneerde URLs: 301 naar het anderstalige equivalent.
+  Object.entries(retiredPages).forEach(([from, to]) => {
+    app.get(`/${lang}/${from}`, (req, res) => res.redirect(301, `/${lang}/${to}`));
   });
+
+  pages.forEach(page => {
+    if (retiredPages[page]) return; // al afgehandeld hierboven
+    app.get(`/${lang}/${page}`, serveLang(`${page}.html`, `/${page}`));
+  });
+
   ruimtes.forEach(ruimte => {
-    app.get(`/${lang}/ruimtes/${ruimte}`, serveLang(path.join('ruimtes', `${ruimte}.html`), path.join('ruimtes', `${ruimte}.html`)));
+    app.get(`/${lang}/ruimtes/${ruimte}`, serveLang(path.join('ruimtes', `${ruimte}.html`), `/ruimtes/${ruimte}`));
   });
 });
 
