@@ -22,6 +22,84 @@ const nodemailer = require('nodemailer');
 const MAIL_TO = process.env.MAIL_TO || 'info@walbrugge.be';
 const MAIL_FROM = process.env.MAIL_FROM || 'info@walbrugge.be';
 
+// ── Verzendweg 1 (voorkeur): Microsoft Graph met OAuth2 ────────────────────
+// Client credentials flow: de server authenticeert als toepassing, niet als
+// gebruiker. Geen wachtwoord, geen MFA-omzeiling, intrekbaar in Entra ID.
+// Vereist in /etc/walbrugge.env: GRAPH_TENANT_ID, GRAPH_CLIENT_ID,
+// GRAPH_CLIENT_SECRET. Optioneel GRAPH_SENDER (standaard MAIL_FROM).
+const GRAPH_TENANT_ID = process.env.GRAPH_TENANT_ID;
+const GRAPH_CLIENT_ID = process.env.GRAPH_CLIENT_ID;
+const GRAPH_CLIENT_SECRET = process.env.GRAPH_CLIENT_SECRET;
+const GRAPH_SENDER = process.env.GRAPH_SENDER || MAIL_FROM;
+const graphActief = !!(GRAPH_TENANT_ID && GRAPH_CLIENT_ID && GRAPH_CLIENT_SECRET);
+
+// Tokens zijn ~1 uur geldig; we hergebruiken ze tot 60 s voor het verlopen.
+let graphToken = null;
+let graphTokenVervalt = 0;
+
+async function graphAccessToken() {
+  if (graphToken && Date.now() < graphTokenVervalt) return graphToken;
+
+  const body = new URLSearchParams({
+    client_id: GRAPH_CLIENT_ID,
+    client_secret: GRAPH_CLIENT_SECRET,
+    scope: 'https://graph.microsoft.com/.default',
+    grant_type: 'client_credentials'
+  });
+
+  const res = await fetch(
+    'https://login.microsoftonline.com/' + encodeURIComponent(GRAPH_TENANT_ID) + '/oauth2/v2.0/token',
+    { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body }
+  );
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.access_token) {
+    throw new Error('token ophalen mislukt (' + res.status + '): ' +
+      (data.error_description || data.error || 'onbekende fout'));
+  }
+
+  graphToken = data.access_token;
+  graphTokenVervalt = Date.now() + ((data.expires_in || 3600) - 60) * 1000;
+  return graphToken;
+}
+
+async function graphSendMail({ subject, text, html, replyToAdres, replyToNaam }) {
+  const token = await graphAccessToken();
+
+  const bericht = {
+    message: {
+      subject,
+      body: { contentType: 'HTML', content: html },
+      toRecipients: [{ emailAddress: { address: MAIL_TO } }]
+    },
+    saveToSentItems: false
+  };
+
+  if (replyToAdres) {
+    bericht.message.replyTo = [{
+      emailAddress: replyToNaam
+        ? { address: replyToAdres, name: replyToNaam }
+        : { address: replyToAdres }
+    }];
+  }
+
+  const res = await fetch(
+    'https://graph.microsoft.com/v1.0/users/' + encodeURIComponent(GRAPH_SENDER) + '/sendMail',
+    {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(bericht)
+    }
+  );
+
+  // Graph antwoordt met 202 Accepted en een lege body bij succes.
+  if (!res.ok) {
+    const fout = await res.text().catch(() => '');
+    throw new Error('Graph sendMail gaf ' + res.status + ': ' + fout.slice(0, 300));
+  }
+}
+
+// ── Verzendweg 2 (terugval): klassieke SMTP ────────────────────────────────
 const mailer = (process.env.SMTP_USER && process.env.SMTP_PASS)
   ? nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.office365.com',
@@ -32,8 +110,13 @@ const mailer = (process.env.SMTP_USER && process.env.SMTP_PASS)
     })
   : null;
 
-if (!mailer) {
-  console.warn('[mail] SMTP_USER/SMTP_PASS ontbreken — offerteaanvragen worden niet gemaild.');
+if (graphActief) {
+  console.log('[mail] Microsoft Graph (OAuth2) actief — afzender ' + GRAPH_SENDER);
+} else if (mailer) {
+  console.log('[mail] SMTP actief — afzender ' + MAIL_FROM);
+} else {
+  console.warn('[mail] Geen Graph- of SMTP-gegevens — offerteaanvragen worden niet gemaild ' +
+    '(ze blijven wel in de database staan).');
 }
 
 const TYPE_LABELS = {
@@ -63,7 +146,7 @@ const FORMULE_LABELS = {
 };
 
 function verstuurOfferteMail(c) {
-  if (!mailer) return;
+  if (!graphActief && !mailer) return;
 
   const esc = s => String(s === null || s === undefined || s === '' ? '—' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -97,17 +180,30 @@ function verstuurOfferteMail(c) {
     '<p style="margin-top:18px;color:#777;font-size:12px;">Antwoord op deze mail om ' +
     'rechtstreeks naar de aanvrager te mailen.</p></div>';
 
-  mailer.sendMail({
-    from: '"Domein Walbrugge" <' + MAIL_FROM + '>',
-    to: MAIL_TO,
-    replyTo: c.email ? (c.naam ? '"' + c.naam + '" <' + c.email + '>' : c.email) : undefined,
-    subject: 'Offerteaanvraag — ' + (TYPE_LABELS[c.type] || c.type || 'algemeen') +
-             ' — ' + (c.naam || 'onbekend'),
-    text: tekst,
-    html: html
-  }).then(() => {
-    console.log('[mail] Offerteaanvraag verstuurd naar ' + MAIL_TO);
+  const onderwerp = 'Offerteaanvraag — ' + (TYPE_LABELS[c.type] || c.type || 'algemeen') +
+                    ' — ' + (c.naam || 'onbekend');
+
+  const verzonden = graphActief
+    ? graphSendMail({
+        subject: onderwerp,
+        text: tekst,
+        html: html,
+        replyToAdres: c.email || null,
+        replyToNaam: c.naam || null
+      }).then(() => 'Graph')
+    : mailer.sendMail({
+        from: '"Domein Walbrugge" <' + MAIL_FROM + '>',
+        to: MAIL_TO,
+        replyTo: c.email ? (c.naam ? '"' + c.naam + '" <' + c.email + '>' : c.email) : undefined,
+        subject: onderwerp,
+        text: tekst,
+        html: html
+      }).then(() => 'SMTP');
+
+  verzonden.then(via => {
+    console.log('[mail] Offerteaanvraag verstuurd naar ' + MAIL_TO + ' via ' + via);
   }).catch(err => {
+    // Nooit de aanvraag laten sneuvelen op een mailfout: hij staat al in de database.
     console.error('[mail] Versturen mislukt:', err.message);
   });
 }
