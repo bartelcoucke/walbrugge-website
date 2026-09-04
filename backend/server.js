@@ -12,6 +12,107 @@ const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
 const nodemailer = require('nodemailer');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// OFFERTEAANVRAAG PER E-MAIL
+// ═══════════════════════════════════════════════════════════════════════════
+// Instellingen komen uit de omgeving (zie /etc/walbrugge.env op de server).
+// Ontbreken de inloggegevens, dan wordt er niets verstuurd en blijft de
+// aanvraag gewoon in de database staan.
+
+const MAIL_TO = process.env.MAIL_TO || 'info@walbrugge.be';
+const MAIL_FROM = process.env.MAIL_FROM || 'info@walbrugge.be';
+
+const mailer = (process.env.SMTP_USER && process.env.SMTP_PASS)
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.office365.com',
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: false,
+      requireTLS: true,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    })
+  : null;
+
+if (!mailer) {
+  console.warn('[mail] SMTP_USER/SMTP_PASS ontbreken — offerteaanvragen worden niet gemaild.');
+}
+
+const TYPE_LABELS = {
+  vergadering: 'Vergadering / meeting',
+  teambuilding: 'Teambuilding',
+  seminarie: 'Seminarie / workshop',
+  strategiedag: 'Strategiedag',
+  'exclusief-domein': 'Exclusief domein',
+  trouwfeest: 'Trouwfeest',
+  communie: 'Communie / lentefeest',
+  verjaardag: 'Verjaardag / jubileum',
+  bedrijfsfeest: 'Bedrijfsfeest',
+  'ander-feest': 'Ander feest',
+  andere: 'Andere'
+};
+
+const FORMULE_LABELS = {
+  vergadermiddag: 'Vergadermiddag',
+  teamdag: 'Teamdag',
+  '24uur': '24-uur formule',
+  exclusief: 'Exclusief domein',
+  'op-maat': 'Op maat',
+  receptie: 'Enkel receptie',
+  'walking-dinner': 'Walking dinner',
+  'zittend-diner': 'Zittend diner',
+  'andere-formule': 'Andere formule'
+};
+
+function verstuurOfferteMail(c) {
+  if (!mailer) return;
+
+  const esc = s => String(s === null || s === undefined || s === '' ? '—' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const velden = [
+    ['Contactpersoon', c.naam],
+    ['Bedrijf', c.bedrijf],
+    ['E-mail', c.email],
+    ['Telefoon', c.telefoon],
+    ['Type evenement', TYPE_LABELS[c.type] || c.type],
+    ['Aantal personen', c.personen],
+    ['Gewenste datum', c.datum],
+    ['Gewenste formule', FORMULE_LABELS[c.formule] || c.formule],
+    ['Bericht', c.bericht],
+    ['Taal / pagina', c.taal],
+    ['Ontvangen op', new Date().toLocaleString('nl-BE', { timeZone: 'Europe/Brussels' })]
+  ];
+
+  const tekst = velden.map(([k, v]) => k + ': ' + (v || '—')).join('\n');
+  const rijen = velden.map(([k, v]) =>
+    '<tr><th align="left" style="padding:6px 14px 6px 0;vertical-align:top;white-space:nowrap;' +
+    'font-weight:600;color:#5b5b5b;">' + esc(k) + '</th>' +
+    '<td style="padding:6px 0;vertical-align:top;">' + esc(v).replace(/\n/g, '<br>') + '</td></tr>'
+  ).join('');
+
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;">' +
+    '<h2 style="margin:0 0 4px;font-size:18px;">Nieuwe offerteaanvraag</h2>' +
+    '<p style="margin:0 0 16px;color:#777;">via walbrugge.be</p>' +
+    '<table cellpadding="0" cellspacing="0">' + rijen + '</table>' +
+    '<p style="margin-top:18px;color:#777;font-size:12px;">Antwoord op deze mail om ' +
+    'rechtstreeks naar de aanvrager te mailen.</p></div>';
+
+  mailer.sendMail({
+    from: '"Domein Walbrugge" <' + MAIL_FROM + '>',
+    to: MAIL_TO,
+    replyTo: c.email ? (c.naam ? '"' + c.naam + '" <' + c.email + '>' : c.email) : undefined,
+    subject: 'Offerteaanvraag — ' + (TYPE_LABELS[c.type] || c.type || 'algemeen') +
+             ' — ' + (c.naam || 'onbekend'),
+    text: tekst,
+    html: html
+  }).then(() => {
+    console.log('[mail] Offerteaanvraag verstuurd naar ' + MAIL_TO);
+  }).catch(err => {
+    console.error('[mail] Versturen mislukt:', err.message);
+  });
+}
+
+
 const app = express();
 const PORT = process.env.PORT || 8100;
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
@@ -106,9 +207,15 @@ db.exec(`
 `);
 
 // Insert admin user if not exists
+// Geen vast wachtwoord in de broncode: zet ADMIN_PASSWORD in de omgeving,
+// of gebruik  node set-admin-password.js  om er zelf een te kiezen.
+const startWachtwoord = process.env.ADMIN_PASSWORD || crypto.randomBytes(24).toString('hex');
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn('[auth] Geen ADMIN_PASSWORD ingesteld. Een nieuwe beheerder krijgt een willekeurig wachtwoord; kies er zelf een met: node set-admin-password.js');
+}
 const adminExists = db.prepare("SELECT id FROM users WHERE email = ?").get('admin@walbrugge.be');
 if (!adminExists) {
-  const hash = bcrypt.hashSync('walbrugge2024', 10);
+  const hash = bcrypt.hashSync(startWachtwoord, 12);
   db.prepare("INSERT INTO users (email, password_hash, role, name) VALUES (?, ?, 'admin', 'Administrator')")
     .run('admin@walbrugge.be', hash);
   console.log('Admin user created: admin@walbrugge.be');
@@ -297,6 +404,8 @@ app.post('/api/contact', (req, res) => {
     
     console.log(`New contact: ${naam} <${email}> - ${type}`);
     
+    verstuurOfferteMail({ naam, email, telefoon, bedrijf, type, personen, datum, formule, bericht, taal: (req.headers.referer || '') });
+
     res.json({ ok: true, message: 'Aanvraag ontvangen' });
   } catch (e) {
     console.error('Contact error:', e);

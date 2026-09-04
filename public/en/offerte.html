@@ -151,10 +151,6 @@ s.parentNode.insertBefore(b, s);})(window.lintrk);
                 <option value="bedrijfsfeest">Company party</option>
                 <option value="ander-feest">Other celebration</option>
               </optgroup>
-              <optgroup label="Stay">
-                <option value="bb-verblijf">B&B overnight stay</option>
-                <option value="groepsverblijf">Group stay</option>
-              </optgroup>
               <option value="andere">Other</option>
             </select>
           </div>
@@ -172,13 +168,8 @@ s.parentNode.insertBefore(b, s);})(window.lintrk);
           <div class="form-group">
             <label for="formule">Preferred package</label>
             <select id="formule" name="formule">
-              <option value="">— Optional —</option>
-              <option value="vergadermiddag">Meeting afternoon (€35 p.p.)</option>
-              <option value="teamdag">Team day (€65 p.p.)</option>
-              <option value="24uur">24-hour package (€120 p.p.)</option>
-              <option value="exclusief">Private estate (from €2,500)</option>
-              <option value="op-maat">Tailor-made</option>
-            </select>
+<option value="">— Optional —</option>
+</select>
           </div>
         </div>
 
@@ -316,6 +307,62 @@ const params = new URLSearchParams(window.location.search);
 if (params.get('formule')) {
   document.getElementById('formule').value = params.get('formule');
 }
+</script>
+
+<!-- Formulelijst volgt het gekozen type evenement -->
+<script>
+(function () {
+  var FORMULES = {"zakelijk": [{"v": "vergadermiddag", "t": "Meeting afternoon (€35 p.p.)"}, {"v": "teamdag", "t": "Team day (€65 p.p.)"}, {"v": "24uur", "t": "24-hour package (€120 p.p.)"}, {"v": "exclusief", "t": "Private estate (from €2,500)"}, {"v": "op-maat", "t": "Tailor-made"}], "feest": [{"v": "receptie", "t": "Reception only"}, {"v": "walking-dinner", "t": "Walking dinner"}, {"v": "zittend-diner", "t": "Seated dinner"}, {"v": "andere-formule", "t": "Other arrangement"}]};
+  var GROEP_VAN_TYPE = {"vergadering": "zakelijk", "teambuilding": "zakelijk", "seminarie": "zakelijk", "strategiedag": "zakelijk", "exclusief-domein": "zakelijk", "trouwfeest": "feest", "communie": "feest", "verjaardag": "feest", "bedrijfsfeest": "feest", "ander-feest": "feest"};
+  var LABELS = {"zakelijk": "Business", "feest": "Celebrations"};
+  var PLACEHOLDER = "— Optional —";
+
+  var typeSel = document.getElementById('type');
+  var formuleSel = document.getElementById('formule');
+  if (!typeSel || !formuleSel) return;
+
+  function optie(o) {
+    var el = document.createElement('option');
+    el.value = o.v;
+    el.textContent = o.t;
+    return el;
+  }
+
+  function vul(groep) {
+    var vorige = formuleSel.value;
+    formuleSel.innerHTML = '';
+    var leeg = document.createElement('option');
+    leeg.value = '';
+    leeg.textContent = PLACEHOLDER;
+    formuleSel.appendChild(leeg);
+
+    if (groep && FORMULES[groep]) {
+      FORMULES[groep].forEach(function (o) { formuleSel.appendChild(optie(o)); });
+    } else {
+      Object.keys(FORMULES).forEach(function (g) {
+        var grp = document.createElement('optgroup');
+        grp.label = LABELS[g];
+        FORMULES[g].forEach(function (o) { grp.appendChild(optie(o)); });
+        formuleSel.appendChild(grp);
+      });
+    }
+
+    formuleSel.value = vorige;
+    if (formuleSel.selectedIndex < 0) formuleSel.value = '';
+  }
+
+  typeSel.addEventListener('change', function () {
+    vul(GROEP_VAN_TYPE[typeSel.value] || null);
+  });
+
+  vul(GROEP_VAN_TYPE[typeSel.value] || null);
+
+  var vooraf = new URLSearchParams(window.location.search).get('formule');
+  if (vooraf) {
+    formuleSel.value = vooraf;
+    if (formuleSel.selectedIndex < 0) formuleSel.value = '';
+  }
+})();
 </script>
 <script src="/assets/js/app.js" defer></script>
 <a href="https://wa.me/32485887723" class="whatsapp-btn" target="_blank" rel="noopener" aria-label="Chat via WhatsApp">
