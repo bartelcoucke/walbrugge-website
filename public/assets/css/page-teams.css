@@ -5,6 +5,14 @@
 /* Hero Corporate */
 .hero-corporate { min-height: 70vh; }
 .hero-corporate .hero-content { padding-top: 80px; }
+.hero-corporate .hero-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(45, 58, 40, 0.45) 0%,
+    rgba(45, 58, 40, 0.55) 50%,
+    rgba(45, 58, 40, 0.7) 100%
+  );
+}
 
 /* Pakket Grid */
 .pakket-grid {
