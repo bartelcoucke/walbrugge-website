@@ -52,6 +52,15 @@ s.parentNode.insertBefore(b, s);})(window.lintrk);
 <noscript>
 <img height="1" width="1" style="display:none;" alt="" src="https://px.ads.linkedin.com/collect/?pid=9619338&fmt=gif" />
 </noscript>
+<style>
+.confirm-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.confirm-modal-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
+.confirm-modal-content { position: relative; background: #fff; padding: 2.5rem; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+.confirm-modal-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1rem; }
+.confirm-modal-content h3 { color: var(--green-dark); margin-bottom: 0.75rem; font-family: var(--font-serif); }
+.confirm-modal-content p { color: #555; margin-bottom: 1.5rem; }
+.confirm-modal-content .btn { min-width: 120px; }
+</style>
 </head>
 <body>
 
@@ -199,7 +208,6 @@ s.parentNode.insertBefore(b, s);})(window.lintrk);
         <div class="aside-box">
           <h3>📞 Liever bellen?</h3>
           <p><a href="tel:+32485887723" class="phone-link">+32 485 88 77 23</a></p>
-          <p class="small">Ma–Vr: 9:00–18:00</p>
         </div>
         
         <div class="aside-box">
@@ -214,6 +222,17 @@ s.parentNode.insertBefore(b, s);})(window.lintrk);
     </div>
   </div>
 </section>
+
+<!-- Bevestigingsmodal -->
+<div id="confirmModal" class="confirm-modal" style="display:none;">
+  <div class="confirm-modal-backdrop"></div>
+  <div class="confirm-modal-content">
+    <div class="confirm-modal-icon">✓</div>
+    <h3 id="confirmModalTitle">Aanvraag verstuurd!</h3>
+    <p id="confirmModalText">Bedankt voor uw aanvraag. We nemen binnen 24 uur contact met u op.</p>
+    <button id="confirmModalBtn" class="btn btn-gold">OK</button>
+  </div>
+</div>
 
 <footer class="footer">
   <div class="container">
@@ -286,9 +305,10 @@ document.getElementById('offerteForm').addEventListener('submit', async function
     const result = await res.json();
     
     if (res.ok && result.ok) {
-      msg.textContent = '✓ Bedankt! Uw aanvraag is ontvangen. We nemen binnen 24 uur contact op.';
-      msg.className = 'form-msg success';
       form.reset();
+      showConfirmModal('Aanvraag verstuurd!', 'Bedankt voor uw aanvraag. We nemen binnen 24 uur contact met u op.');
+      msg.textContent = '';
+      msg.className = '';
     } else {
       msg.textContent = result.error || 'Er ging iets mis. Probeer opnieuw.';
       msg.className = 'form-msg error';
@@ -300,6 +320,23 @@ document.getElementById('offerteForm').addEventListener('submit', async function
   
   btn.disabled = false;
   btn.textContent = 'Verstuur aanvraag';
+});
+
+// Bevestigingsmodal
+function showConfirmModal(title, text) {
+  var modal = document.getElementById('confirmModal');
+  document.getElementById('confirmModalTitle').textContent = title;
+  document.getElementById('confirmModalText').textContent = text;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+document.getElementById('confirmModalBtn').addEventListener('click', function() {
+  document.getElementById('confirmModal').style.display = 'none';
+  document.body.style.overflow = '';
+});
+document.querySelector('.confirm-modal-backdrop').addEventListener('click', function() {
+  document.getElementById('confirmModal').style.display = 'none';
+  document.body.style.overflow = '';
 });
 
 // Pre-fill formule from URL
