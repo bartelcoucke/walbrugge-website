@@ -63,14 +63,16 @@ async function graphAccessToken() {
   return graphToken;
 }
 
-async function graphSendMail({ subject, text, html, replyToAdres, replyToNaam, naar }) {
+async function graphSendMail({ subject, text, html, replyToAdres, replyToNaam, to }) {
   const token = await graphAccessToken();
+
+  const ontvangers = (to && to.length ? to : [MAIL_TO]);
 
   const bericht = {
     message: {
       subject,
       body: { contentType: 'HTML', content: html },
-      toRecipients: [{ emailAddress: { address: naar || MAIL_TO } }]
+      toRecipients: ontvangers.map(a => ({ emailAddress: { address: a } }))
     },
     saveToSentItems: false
   };
@@ -207,6 +209,115 @@ function verstuurOfferteMail(c) {
     console.error('[mail] Versturen mislukt:', err.message);
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WAARSCHUWING: CLIENT SECRET VAN DE GRAPH-APP VERVALT
+// ═══════════════════════════════════════════════════════════════════════════
+// Zet in /etc/walbrugge.env de vervaldatum van het secret:
+//   GRAPH_SECRET_EXPIRES=JJJJ-MM-DD
+//   ALERT_TO=info@walbrugge.be,bartelcoucke@renoperfect.be   (optioneel)
+//   GRAPH_SECRET_WARN_DAYS=14                                (optioneel)
+// Vanaf 14 dagen voor die datum vertrekt er elke dag een mail, tot er een
+// nieuw secret met een nieuwe vervaldatum is ingesteld. Eén mail per dag:
+// data/secret-waarschuwing.txt onthoudt wanneer er laatst één vertrok.
+
+const SECRET_VERVALT = (process.env.GRAPH_SECRET_EXPIRES || '').trim();
+const WAARSCHUW_DAGEN = parseInt(process.env.GRAPH_SECRET_WARN_DAYS || '14', 10);
+const ALERT_TO = (process.env.ALERT_TO || 'info@walbrugge.be,bartelcoucke@renoperfect.be')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
+if (graphActief && !SECRET_VERVALT) {
+  console.warn('[mail] GRAPH_SECRET_EXPIRES niet ingesteld — er komt geen waarschuwing ' +
+    'wanneer het client secret vervalt.');
+}
+
+function dagenTot(datum) {
+  const d = new Date(datum + 'T00:00:00Z');
+  return isNaN(d.getTime()) ? null : Math.ceil((d.getTime() - Date.now()) / 86400000);
+}
+
+async function controleerSecretVervaldatum() {
+  if (!graphActief || !SECRET_VERVALT) return;
+
+  const dagen = dagenTot(SECRET_VERVALT);
+  if (dagen === null) {
+    console.warn('[mail] GRAPH_SECRET_EXPIRES is geen geldige datum (JJJJ-MM-DD): ' + SECRET_VERVALT);
+    return;
+  }
+  if (dagen > WAARSCHUW_DAGEN) return;
+
+  const bestand = path.join(__dirname, '..', 'data', 'secret-waarschuwing.txt');
+  const vandaag = new Date().toISOString().slice(0, 10);
+  try {
+    if (fs.readFileSync(bestand, 'utf-8').trim() === vandaag) return;
+  } catch (e) { /* vandaag nog niets verstuurd */ }
+
+  const verlopen = dagen < 0;
+  const onderwerp = verlopen
+    ? 'VERLOPEN: het client secret van de website werkt niet meer'
+    : 'Nog ' + dagen + ' dag' + (dagen === 1 ? '' : 'en') + ': client secret website vervalt';
+
+  const esc = s => String(s === null || s === undefined || s === '' ? '—' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;">' +
+    '<h2 style="margin:0 0 4px;font-size:18px;color:' +
+    (verlopen || dagen <= 3 ? '#b3261e' : '#8a6d00') + ';">' + esc(onderwerp) + '</h2>' +
+    '<p style="margin:0 0 16px;color:#777;">App-registratie “Walbrugge website mail” in Microsoft Entra</p>' +
+    '<p style="margin:0 0 6px;"><strong>Vervaldatum:</strong> ' + esc(SECRET_VERVALT) + '</p>' +
+    '<p style="margin:0 0 16px;">' + (verlopen
+      ? 'Offerteaanvragen worden op dit moment <strong>niet meer gemaild</strong>. Ze komen ' +
+        'nog wel in het beheerpaneel terecht, maar zonder verwittiging.'
+      : 'Zodra het secret vervalt, komen offerteaanvragen alleen nog in het beheerpaneel ' +
+        'terecht, zonder verwittiging.') + '</p>' +
+    '<p style="margin:0 0 6px;"><strong>Wat te doen</strong></p>' +
+    '<ol style="margin:6px 0 0;padding-left:20px;line-height:1.6;">' +
+    '<li>Entra → App-registraties → “Walbrugge website mail” → Certificaten en geheimen → Nieuw clientgeheim.</li>' +
+    '<li>Kopieer de <em>Waarde</em> — die is maar één keer zichtbaar.</li>' +
+    '<li>Zet op de server in <code>/etc/walbrugge.env</code> de nieuwe <code>GRAPH_CLIENT_SECRET</code> ' +
+    'en de nieuwe <code>GRAPH_SECRET_EXPIRES</code> (JJJJ-MM-DD).</li>' +
+    '<li><code>systemctl restart walbrugge</code></li>' +
+    '<li>Verwijder daarna het oude geheim in Entra.</li>' +
+    '</ol>' +
+    '<p style="margin-top:18px;color:#777;font-size:12px;">Deze herinnering komt elke dag terug ' +
+    'tot de nieuwe vervaldatum is ingesteld.</p></div>';
+
+  const tekst = onderwerp + '\n\nVervaldatum: ' + SECRET_VERVALT +
+    '\n\nNieuw clientgeheim maken in Entra, GRAPH_CLIENT_SECRET en GRAPH_SECRET_EXPIRES ' +
+    'aanpassen in /etc/walbrugge.env, daarna: systemctl restart walbrugge';
+
+  try {
+    if (graphActief) {
+      await graphSendMail({ subject: onderwerp, text: tekst, html: html, to: ALERT_TO });
+    } else {
+      await mailer.sendMail({
+        from: '"Domein Walbrugge" <' + MAIL_FROM + '>',
+        to: ALERT_TO.join(', '),
+        subject: onderwerp,
+        text: tekst,
+        html: html
+      });
+    }
+    console.log('[mail] Waarschuwing client secret verstuurd naar ' + ALERT_TO.join(', '));
+  } catch (err) {
+    console.error('[mail] Waarschuwing client secret mislukt:', err.message);
+    return;
+  }
+
+  // Pas noteren nadat de mail effectief vertrokken is, zodat een mislukte
+  // poging later op de dag opnieuw geprobeerd wordt.
+  try {
+    fs.mkdirSync(path.dirname(bestand), { recursive: true });
+    fs.writeFileSync(bestand, vandaag);
+  } catch (err) {
+    console.error('[mail] Kon ' + bestand + ' niet schrijven:', err.message);
+  }
+}
+
+// Eerste controle 30 s na de start, daarna om de zes uur.
+setTimeout(controleerSecretVervaldatum, 30000);
+setInterval(controleerSecretVervaldatum, 6 * 60 * 60 * 1000);
 
 
 const app = express();
