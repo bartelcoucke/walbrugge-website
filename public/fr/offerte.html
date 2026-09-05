@@ -312,7 +312,7 @@ if (params.get('formule')) {
 <!-- Formulelijst volgt het gekozen type evenement -->
 <script>
 (function () {
-  var FORMULES = {"zakelijk": [{"v": "vergadermiddag", "t": "Après-midi de réunion (35 € p.p.)"}, {"v": "teamdag", "t": "Journée d'équipe (65 € p.p.)"}, {"v": "24uur", "t": "Formule 24 h (120 € p.p.)"}, {"v": "exclusief", "t": "Domaine privatisé (à partir de 2 500 €)"}, {"v": "op-maat", "t": "Sur mesure"}], "feest": [{"v": "receptie", "t": "Réception uniquement"}, {"v": "walking-dinner", "t": "Walking dinner"}, {"v": "zittend-diner", "t": "Dîner assis"}, {"v": "andere-formule", "t": "Autre formule"}]};
+  var FORMULES = {"zakelijk": [{"v": "vergadermiddag", "t": "Après-midi de réunion (à partir de 35 € p.p. HTVA)"}, {"v": "teamdag", "t": "Journée d'équipe (à partir de 65 € p.p. HTVA)"}, {"v": "24uur", "t": "Formule 24 h (à partir de 120 € p.p. HTVA)"}, {"v": "exclusief", "t": "Domaine privatisé (2 000 € HTVA)"}, {"v": "op-maat", "t": "Sur mesure"}], "feest": [{"v": "receptie", "t": "Réception uniquement"}, {"v": "walking-dinner", "t": "Walking dinner"}, {"v": "zittend-diner", "t": "Dîner assis"}, {"v": "andere-formule", "t": "Autre formule"}]};
   var GROEP_VAN_TYPE = {"vergadering": "zakelijk", "teambuilding": "zakelijk", "seminarie": "zakelijk", "strategiedag": "zakelijk", "exclusief-domein": "zakelijk", "trouwfeest": "feest", "communie": "feest", "verjaardag": "feest", "bedrijfsfeest": "feest", "ander-feest": "feest"};
   var LABELS = {"zakelijk": "Professionnel", "feest": "Fêtes"};
   var PLACEHOLDER = "— Facultatif —";
