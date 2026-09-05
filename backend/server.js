@@ -210,6 +210,7 @@ function verstuurOfferteMail(c) {
 
 
 const app = express();
+app.disable('x-powered-by');
 const PORT = process.env.PORT || 8100;
 const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
 const DATA_DIR = path.join(__dirname, '..', 'data');
