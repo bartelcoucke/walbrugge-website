@@ -284,14 +284,15 @@ p { margin-bottom: 1rem; }
   z-index: 1002;
 }
 
-/* Logo groter dan de balk: hangt tot ~43% over de onderrand van het menu */
+/* Logo groter dan de balk: horizontale middellijn valt samen met onderrand nav */
 .nav-logo img {
   height: 136px;
   width: auto;
   object-fit: contain;
   border-radius: 0;
   display: block;
-  margin-bottom: -59px;
+  margin-top: 68px;
+  margin-bottom: -68px;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
 }
 
@@ -306,7 +307,8 @@ header.nav,
     width: auto;
     object-fit: contain;
     border-radius: 0;
-    margin-bottom: -43px;
+    margin-top: 52px;
+    margin-bottom: -52px;
   }
 }
 
