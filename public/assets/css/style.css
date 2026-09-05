@@ -292,7 +292,7 @@ p { margin-bottom: 1rem; }
   border-radius: 0;
   display: block;
   position: relative;
-  top: 30px;
+  top: 40px;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.25));
 }
 
@@ -308,7 +308,7 @@ header.nav,
     object-fit: contain;
     border-radius: 0;
     position: relative;
-    top: 22px;
+    top: 32px;
   }
 }
 
