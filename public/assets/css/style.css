@@ -988,12 +988,19 @@ header.nav,
   margin-bottom: 56px;
 }
 
+.footer-brand {
+  text-align: center;
+}
+
 .footer-brand img {
   width: auto;
   height: 90px;
   object-fit: contain;
   border-radius: 0;
   margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
 }
 
 .footer-brand p {
