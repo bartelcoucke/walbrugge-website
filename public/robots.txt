@@ -13,3 +13,6 @@ Disallow: /api/
 
 # Allow assets
 Allow: /assets/
+
+# AI/LLM info
+# See https://walbrugge.be/llms.txt for structured business information
