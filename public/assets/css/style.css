@@ -3334,3 +3334,39 @@ a.hero-award-badge:hover {
 }
 .g-stars-fill::before { content: "★★★★★"; }
 .g-stars-num { margin-left: 0.4em; font-weight: 600; }
+
+/* ── Veelgestelde vragen ────────────────────────────────────────────────
+ * Uitklapbaar met <details>, zodat de antwoorden zonder JavaScript
+ * leesbaar blijven voor zoekmachines en schermlezers.
+ */
+.faq-list { margin-top: 2rem; }
+.faq-item {
+  border-bottom: 1px solid var(--linen-dark);
+  padding: 1.1rem 0;
+}
+.faq-item summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  list-style: none;
+  position: relative;
+  padding-right: 2rem;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: "+";
+  position: absolute;
+  right: 0;
+  top: -0.1rem;
+  font-size: 1.4rem;
+  font-weight: 400;
+  color: var(--gold-dark);
+  transition: transform 0.2s;
+}
+.faq-item[open] summary::after { content: "−"; }
+.faq-item p {
+  margin: 0.8rem 0 0;
+  line-height: 1.75;
+  color: var(--muted);
+}
