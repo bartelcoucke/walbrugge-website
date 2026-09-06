@@ -792,6 +792,16 @@ app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest
 // Serve specific HTML pages
 const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'algemene-voorwaarden', 'login', 'admin', 'blog'];
 
+// llms.txt — plain text voor AI-bots
+app.get('/llms.txt', (req, res) => {
+  const file = path.join(__dirname, '..', 'public', 'llms.txt');
+  if (fs.existsSync(file)) {
+    res.type('text/plain').sendFile(file);
+  } else {
+    res.status(404).type('text/plain').send('Not found');
+  }
+});
+
 pages.forEach(page => {
   app.get(`/${page}`, (req, res) => {
     const file = path.join(__dirname, '..', 'public', `${page}.html`);
@@ -932,14 +942,14 @@ languages.forEach(lang => {
   });
 });
 
-// Catch-all: serve index.html
+// Catch-all: echte 404 voor onbekende paden
 app.get('*', (req, res) => {
   // Skip API routes
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Route niet gevonden' });
   }
   
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  res.status(404).sendFile(path.join(__dirname, '..', 'public', '404.html'));
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
