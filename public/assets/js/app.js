@@ -375,13 +375,15 @@
 
   // Awards en reviewlinks: Salino, Booking.com, Eventplanner en Google. De
   // award-kaarten onder "Erkend & gewaardeerd" tellen als 'tegel'; de badges in
-  // de hero, tekstlinks en knoppen als 'knop'. Google-routelinks tellen niet mee.
+  // de hero, tekstlinks en knoppen als 'knop'. Google telt via de zoeklink, g.page
+  // en de Maps-vermelding (?cid= of /maps/place/, zoals "Alle beoordelingen op
+  // Google" op de homepage); routelinks (/maps/dir, maps?q=) tellen niet mee.
   function awardVan(a, href) {
     var h = href.toLowerCase();
     var platform = h.indexOf('salino.be') !== -1 ? 'salino'
       : h.indexOf('booking.com') !== -1 ? 'booking'
       : h.indexOf('eventplanner.') !== -1 ? 'eventplanner'
-      : /google\.[a-z.]+\/search|g\.page\//.test(h) ? 'google' : '';
+      : /google\.[a-z.]+\/search|g\.page\/|maps\.google\.[a-z.]+\/\?cid=|google\.[a-z.]+\/maps\/place\//.test(h) ? 'google' : '';
     if (!platform) return '';
     return platform + ':' + (a.classList.contains('award-card') ? 'tegel' : 'knop');
   }
