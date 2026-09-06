@@ -1548,6 +1548,56 @@ app.get('/blog/:slug', (req, res) => {
   html = html.replace(/<title>[\s\S]*?<\/title>/, '');
   html = html.replace(/<meta name="description"[^>]*>/, '');
   html = html.replace('</head>', seoBlock + '\n</head>');
+
+  // Het artikel zelf server-side renderen. Voorheen stond er enkel
+  // "Artikel laden..." in de HTML en kwam de tekst pas via JavaScript —
+  // onzichtbaar voor zoekmachines en AI-crawlers, die geen JavaScript
+  // uitvoeren. De client vult hierna enkel nog de gerelateerde artikels aan.
+  const datum = post.published_at
+    ? new Date(post.published_at).toLocaleDateString('nl-BE',
+        { year: 'numeric', month: 'long', day: 'numeric' })
+    : '';
+  const kop = esc(post.featured_image || '/assets/img/hero.webp');
+  const tagsHtml = post.tags
+    ? '<div class="blog-tags">' + String(post.tags).split(',')
+        .map(t => '<span class="blog-tag">' + esc(t.trim()) + '</span>').join('') + '</div>'
+    : '';
+
+  const artikelHtml =
+    '<header class="blog-article-header" style="background-image: url(\'' + kop + '\')">' +
+      '<div class="blog-article-header-overlay"></div>' +
+      '<div class="blog-article-header-content">' +
+        '<div class="container">' +
+          '<a href="/blog" class="blog-back">← Terug naar blog</a>' +
+          (post.category ? '<span class="blog-article-category">' + esc(post.category) + '</span>' : '') +
+          '<h1>' + esc(post.title) + '</h1>' +
+          '<div class="blog-article-meta">' +
+            '<span class="blog-article-author">Door ' + esc(post.author || 'Walbrugge') + '</span>' +
+            (datum ? '<time datetime="' + esc(post.published_at) + '">' + datum + '</time>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</header>' +
+    '<div class="blog-article-body"><div class="container container-narrow">' +
+      (post.content || '') +
+    '</div></div>' +
+    '<footer class="blog-article-footer"><div class="container container-narrow">' +
+      tagsHtml +
+      '<div class="blog-share"><span>Delen:</span>' +
+        '<a href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url) +
+          '" target="_blank" rel="noopener">Facebook</a>' +
+        '<a href="https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(url) +
+          '" target="_blank" rel="noopener">LinkedIn</a>' +
+      '</div>' +
+    '</div></footer>';
+
+  html = html.replace(
+    /<article class="blog-article" id="blogArticle">[\s\S]*?<\/article>/,
+    '<article class="blog-article" id="blogArticle" data-ssr="1" data-category="' +
+      esc(post.category || '') + '" data-post-id="' + post.id + '">' +
+      artikelHtml + '</article>'
+  );
+
   res.send(html);
 });
 

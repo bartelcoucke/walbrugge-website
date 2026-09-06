@@ -105,7 +105,15 @@
 document.addEventListener('DOMContentLoaded', async function() {
   const article = document.getElementById('blogArticle');
   const slug = window.location.pathname.split('/').pop();
-  
+
+  // De server rendert het artikel al mee in de HTML. Dan hoeft hier niets
+  // opnieuw getekend te worden — enkel de gerelateerde artikels ophalen.
+  if (article && article.dataset.ssr === '1') {
+    loadRelatedPosts(article.dataset.category || null,
+                     parseInt(article.dataset.postId, 10) || 0);
+    return;
+  }
+
   try {
     const res = await fetch(`/api/blog/${slug}`);
     if (!res.ok) throw new Error('Not found');
