@@ -425,6 +425,16 @@ db.exec(`
     last_used_at DATETIME
   );
 
+  -- Openstaande herstelcodes voor een vergeten wachtwoord.
+  CREATE TABLE IF NOT EXISTS password_resets (
+    challenge TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    code_hash TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    attempts INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   -- Openstaande inlogcodes. Kortstondig: opgeruimd na gebruik of verval.
   CREATE TABLE IF NOT EXISTS login_codes (
     challenge TEXT PRIMARY KEY,
@@ -506,10 +516,12 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // Static files
+// Caddy zet de caching-headers. express.static mag er zelf geen sturen:
+// removeHeader in setHeaders werkte niet, omdat express de header pas ná die
+// callback zet — en dan juist wél, omdat er dan geen header meer staat.
+// Met cacheControl: false zwijgt express en blijft er één header over.
 app.use(express.static(path.join(__dirname, '..', 'public'), {
-  setHeaders: (res) => {
-    res.removeHeader('Cache-Control');  // Caddy regelt caching — voorkomt dubbele headers
-  },
+  cacheControl: false,
   etag: true,
   lastModified: true
 }));
@@ -581,6 +593,39 @@ function toestelLabel(userAgent) {
   return systeem + ' · ' + browser;
 }
 
+async function stuurHerstelcode(naarAdres, code) {
+  const onderwerp = 'Herstelcode Walbrugge: ' + code;
+  const tekst = 'Uw herstelcode voor het beheer van walbrugge.be is ' + code + '.\n' +
+                'De code blijft 10 minuten geldig.\n\n' +
+                'Hebt u zelf geen nieuw wachtwoord aangevraagd, negeer deze mail dan: ' +
+                'zonder de code verandert er niets.';
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;">' +
+    '<h2 style="margin:0 0 4px;font-size:18px;">Nieuw wachtwoord instellen</h2>' +
+    '<p style="margin:0 0 16px;color:#777;">walbrugge.be</p>' +
+    '<p style="font-size:30px;letter-spacing:6px;font-weight:bold;margin:0 0 12px;">' + code + '</p>' +
+    '<p style="margin:0 0 16px;">De code blijft 10 minuten geldig.</p>' +
+    '<p style="color:#777;font-size:12px;">Hebt u zelf geen nieuw wachtwoord aangevraagd, ' +
+    'negeer deze mail dan — zonder de code verandert er niets.</p></div>';
+
+  return verstuurEenvoudig(naarAdres, onderwerp, tekst, html);
+}
+
+async function verstuurEenvoudig(naarAdres, onderwerp, tekst, html) {
+  if (graphActief) {
+    await graphSendMail({ subject: onderwerp, text: tekst, html, to: [naarAdres] });
+    return 'Graph';
+  }
+  if (mailer) {
+    await mailer.sendMail({
+      from: '"Domein Walbrugge" <' + MAIL_FROM + '>',
+      to: naarAdres, subject: onderwerp, text: tekst, html
+    });
+    return 'SMTP';
+  }
+  throw new Error('geen mailweg ingesteld');
+}
+
 async function stuurInlogcode(naarAdres, code) {
   const onderwerp = 'Inlogcode Walbrugge: ' + code;
   const tekst = 'Uw inlogcode voor het beheer van walbrugge.be is ' + code + '.\n' +
@@ -595,21 +640,7 @@ async function stuurInlogcode(naarAdres, code) {
     '<p style="color:#777;font-size:12px;">Hebt u zelf niet proberen in te loggen, ' +
     'wijzig dan meteen uw wachtwoord.</p></div>';
 
-  if (graphActief) {
-    await graphSendMail({ subject: onderwerp, text: tekst, html, naar: naarAdres });
-    return 'Graph';
-  }
-  if (mailer) {
-    await mailer.sendMail({
-      from: '"Domein Walbrugge" <' + MAIL_FROM + '>',
-      to: naarAdres,
-      subject: onderwerp,
-      text: tekst,
-      html
-    });
-    return 'SMTP';
-  }
-  throw new Error('geen mailweg ingesteld');
+  return verstuurEenvoudig(naarAdres, onderwerp, tekst, html);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -813,6 +844,85 @@ app.post('/api/login/2fa', (req, res) => {
   }
 
   return res.json(maakLoginAntwoord(user, extra));
+});
+
+// ── Wachtwoord vergeten ───────────────────────────────────────────────────
+// Stap 1: code aanvragen. Het antwoord is altijd hetzelfde, ook als het adres
+// niet bestaat — anders verklapt de route welke adressen beheerder zijn.
+app.post('/api/login/forgot', (req, res) => {
+  const email = String((req.body && req.body.email) || '').trim().toLowerCase();
+  const altijd = {
+    ok: true,
+    message: 'Bestaat er een beheerder met dit adres, dan is er een herstelcode verstuurd.'
+  };
+  if (!email) return res.status(400).json({ error: 'Vul uw e-mailadres in' });
+
+  const user = db.prepare('SELECT * FROM users WHERE lower(email) = ? AND role = ?')
+    .get(email, 'admin');
+  if (!user) return res.json(altijd);
+
+  db.prepare('DELETE FROM password_resets WHERE expires_at < ?').run(Date.now());
+
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  const challenge = crypto.randomBytes(24).toString('hex');
+  db.prepare(`INSERT INTO password_resets (challenge, user_id, code_hash, expires_at)
+              VALUES (?, ?, ?, ?)`)
+    .run(challenge, user.id, sha256(code), Date.now() + CODE_GELDIG_MS);
+
+  const naarAdres = process.env.ADMIN_2FA_EMAIL || user.email;
+  stuurHerstelcode(naarAdres, code)
+    .then(via => console.log('[herstel] Herstelcode verstuurd naar ' + naarAdres + ' via ' + via))
+    .catch(err => {
+      console.error('[herstel] Versturen mislukt:', err.message);
+      console.error('[herstel] Noodcode voor ' + user.email + ': ' + code);
+    });
+
+  res.json(Object.assign({ challenge, hint: maskeerAdres(naarAdres) }, altijd));
+});
+
+// Stap 2: code plus nieuw wachtwoord.
+app.post('/api/login/reset', (req, res) => {
+  const { challenge, code, password } = req.body || {};
+  if (!challenge || !code || !password) {
+    return res.status(400).json({ error: 'Vul de code en een nieuw wachtwoord in' });
+  }
+  if (String(password).length < 12) {
+    return res.status(400).json({ error: 'Het wachtwoord moet minstens 12 tekens lang zijn' });
+  }
+
+  db.prepare('DELETE FROM password_resets WHERE expires_at < ?').run(Date.now());
+  const rij = db.prepare('SELECT * FROM password_resets WHERE challenge = ?').get(challenge);
+
+  if (!rij || rij.expires_at < Date.now()) {
+    return res.status(401).json({ error: 'De code is verlopen. Vraag een nieuwe aan.' });
+  }
+  if (rij.attempts >= CODE_MAX_POGINGEN) {
+    db.prepare('DELETE FROM password_resets WHERE challenge = ?').run(challenge);
+    return res.status(429).json({ error: 'Te veel pogingen. Vraag een nieuwe code aan.' });
+  }
+  if (!hashesGelijk(sha256(String(code).trim()), rij.code_hash)) {
+    db.prepare('UPDATE password_resets SET attempts = attempts + 1 WHERE challenge = ?').run(challenge);
+    const over = CODE_MAX_POGINGEN - (rij.attempts + 1);
+    return res.status(401).json({
+      error: over > 0 ? 'Verkeerde code. Nog ' + over + ' poging(en).' : 'Verkeerde code.'
+    });
+  }
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(rij.user_id);
+  if (!user) return res.status(401).json({ error: 'Gebruiker bestaat niet meer' });
+
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?')
+    .run(bcrypt.hashSync(String(password), 12), user.id);
+
+  // Een herstel maakt alle bestaande sessies en toestellen ongeldig: wie het
+  // wachtwoord kwijt was, wil niet dat een oud toestel toegang houdt.
+  db.prepare('DELETE FROM password_resets WHERE challenge = ?').run(challenge);
+  db.prepare('DELETE FROM trusted_devices WHERE user_id = ?').run(user.id);
+  db.prepare('DELETE FROM login_codes WHERE user_id = ?').run(user.id);
+  console.log('[herstel] Wachtwoord opnieuw ingesteld voor ' + user.email +
+              ' — vertrouwde toestellen ingetrokken');
+
+  res.json({ ok: true, message: 'Wachtwoord gewijzigd. U kunt nu inloggen.' });
 });
 
 // Vertrouwde toestellen bekijken en intrekken.

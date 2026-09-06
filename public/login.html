@@ -62,6 +62,54 @@
       </div>
       <button type="submit" class="btn btn-green btn-lg btn-full">Inloggen</button>
       <div id="adminMsg" class="login-msg" style="display:none;"></div>
+      <p style="margin:16px 0 0;text-align:center;">
+        <a href="#" id="vergetenLink" style="color:#777;font-size:0.85rem;">Wachtwoord vergeten?</a>
+      </p>
+    </form>
+
+    <!-- Wachtwoord vergeten: code aanvragen -->
+    <form id="forgotForm" class="login-form">
+      <p style="margin:0 0 16px;color:#555;font-size:0.92rem;">
+        Vul uw e-mailadres in. Bestaat er een beheerder met dat adres, dan sturen
+        we een code van 6 cijfers waarmee u een nieuw wachtwoord kunt kiezen.
+      </p>
+      <div class="form-group">
+        <label for="forgotEmail">E-mailadres</label>
+        <input type="email" id="forgotEmail" name="email" required placeholder="naam@walbrugge.be">
+      </div>
+      <button type="submit" class="btn btn-green btn-lg btn-full">Code versturen</button>
+      <div id="forgotMsg" class="login-msg" style="display:none;"></div>
+      <p style="margin:16px 0 0;text-align:center;">
+        <a href="#" class="terugNaarLogin" style="color:#777;font-size:0.85rem;">← Terug naar inloggen</a>
+      </p>
+    </form>
+
+    <!-- Wachtwoord vergeten: nieuw wachtwoord kiezen -->
+    <form id="resetForm" class="login-form">
+      <p style="margin:0 0 16px;color:#555;font-size:0.92rem;">
+        We stuurden een code naar <strong id="resetHint"></strong>.
+        Vul die in en kies een nieuw wachtwoord van minstens 12 tekens.
+      </p>
+      <div class="form-group">
+        <label for="resetCode">Herstelcode</label>
+        <input type="text" id="resetCode" name="code" required
+               inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
+               placeholder="123456" style="letter-spacing:4px;font-size:1.2rem;">
+      </div>
+      <div class="form-group">
+        <label for="resetPass">Nieuw wachtwoord</label>
+        <input type="password" id="resetPass" name="password" required minlength="12"
+               autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="resetPass2">Nogmaals ter bevestiging</label>
+        <input type="password" id="resetPass2" required minlength="12" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn btn-green btn-lg btn-full">Wachtwoord instellen</button>
+      <div id="resetMsg" class="login-msg" style="display:none;"></div>
+      <p style="margin:16px 0 0;text-align:center;">
+        <a href="#" class="terugNaarLogin" style="color:#777;font-size:0.85rem;">← Terug naar inloggen</a>
+      </p>
     </form>
 
     <!-- Tweede stap: code uit de mailbox -->
@@ -172,6 +220,107 @@ document.getElementById('adminForm').addEventListener('submit', async (e) => {
       bewaarSessie(data);
     } else {
       msg.textContent = data.error || 'Inloggen mislukt';
+      msg.className = 'login-msg error';
+      msg.style.display = 'block';
+    }
+  } catch (e) {
+    msg.textContent = 'Verbindingsfout. Probeer opnieuw.';
+    msg.className = 'login-msg error';
+    msg.style.display = 'block';
+  }
+});
+
+// ── Wachtwoord vergeten ───────────────────────────────────────────────────
+let resetChallenge = null;
+
+function toonFormulier(id, verbergTabs) {
+  document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector('.login-tabs').style.display = verbergTabs ? 'none' : '';
+}
+
+document.getElementById('vergetenLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  document.getElementById('forgotEmail').value = document.getElementById('adminEmail').value;
+  document.getElementById('forgotMsg').style.display = 'none';
+  toonFormulier('forgotForm', true);
+});
+
+document.querySelectorAll('.terugNaarLogin').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    resetChallenge = null;
+    toonFormulier('adminForm', false);
+  });
+});
+
+document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('forgotMsg');
+  msg.style.display = 'none';
+  try {
+    const res = await fetch('/api/login/forgot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: document.getElementById('forgotEmail').value })
+    });
+    const data = await res.json();
+    if (data.ok && data.challenge) {
+      resetChallenge = data.challenge;
+      document.getElementById('resetHint').textContent = data.hint || 'uw mailbox';
+      toonFormulier('resetForm', true);
+      document.getElementById('resetCode').focus();
+    } else if (data.ok) {
+      // Geen beheerder met dit adres: hetzelfde antwoord, zodat de pagina
+      // niet verklapt welke adressen bestaan.
+      msg.textContent = data.message;
+      msg.className = 'login-msg';
+      msg.style.display = 'block';
+    } else {
+      msg.textContent = data.error || 'Aanvraag mislukt';
+      msg.className = 'login-msg error';
+      msg.style.display = 'block';
+    }
+  } catch (e) {
+    msg.textContent = 'Verbindingsfout. Probeer opnieuw.';
+    msg.className = 'login-msg error';
+    msg.style.display = 'block';
+  }
+});
+
+document.getElementById('resetForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('resetMsg');
+  msg.style.display = 'none';
+
+  const pw = document.getElementById('resetPass').value;
+  if (pw !== document.getElementById('resetPass2').value) {
+    msg.textContent = 'De twee wachtwoorden komen niet overeen.';
+    msg.className = 'login-msg error';
+    msg.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/login/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        challenge: resetChallenge,
+        code: document.getElementById('resetCode').value,
+        password: pw
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toonFormulier('adminForm', false);
+      const m = document.getElementById('adminMsg');
+      m.textContent = 'Wachtwoord gewijzigd. Log nu in met uw nieuwe wachtwoord.';
+      m.className = 'login-msg';
+      m.style.display = 'block';
+      document.getElementById('adminPass').value = '';
+    } else {
+      msg.textContent = data.error || 'Instellen mislukt';
       msg.className = 'login-msg error';
       msg.style.display = 'block';
     }
