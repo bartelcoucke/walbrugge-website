@@ -97,6 +97,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
       <a href="#" data-section="bezoekers">📈 Bezoekers</a>
       <a href="#" data-section="klikken">🖱️ Site klik analytics</a>
       <a href="#" data-section="logs">📋 Logboek</a>
+      <a href="#" data-section="logreferrals">🔗 Logboek referrals</a>
     </nav>
     <div class="sidebar-footer">
       <a href="https://analytics.google.com/analytics/web/#/a406916498p552781549/reports/intelligenthome" target="_blank" rel="noopener noreferrer" style="color:inherit;display:block;margin-bottom:8px;">📈 Google Analytics</a>
@@ -240,6 +241,96 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             <tbody id="devicesList">
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- Logboek referrals: verwijzers en user-agents uit het Caddy-toegangslogboek -->
+      <section id="section-logreferrals" class="section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Logboek referrals</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="lrDagen" onchange="loadLogReferrals(false)"
+                style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;">
+                <option value="7">Laatste 7 dagen</option>
+                <option value="30">Laatste 30 dagen</option>
+                <option value="90">Laatste 90 dagen</option>
+                <option value="365">Laatste 365 dagen</option>
+                <option value="0" selected>Alles wat er nog is</option>
+              </select>
+              <button onclick="loadLogReferrals(true)"
+                style="padding:6px 14px;border:1px solid var(--green-dark);background:#fff;color:var(--green-dark);border-radius:6px;cursor:pointer;font-size:0.85rem;">
+                Vernieuwen
+              </button>
+            </div>
+          </div>
+          <p style="margin:0;color:#666;font-size:0.9rem;">
+            Gelezen uit het toegangslogboek van de webserver (Caddy), inclusief de oudere,
+            geroteerde logbestanden — zo veel geschiedenis als er nog op de server staat.
+            Alleen paginaweergaven tellen mee (geen afbeeldingen of scripts). Er wordt niets
+            bewaard: het logboek wordt bij het openen gelezen; het resultaat blijft tien minuten
+            in het geheugen, "Vernieuwen" leest het opnieuw. IP-adressen worden niet gebruikt.
+          </p>
+          <p id="lrInfo" style="margin:10px 0 0;color:#666;font-size:0.85rem;"></p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><h3>Paginaweergaven</h3><div class="num" id="lrWeergaven">-</div><div class="sub" id="lrBots"></div></div>
+          <div class="stat-card"><h3>Verschillende verwijzers</h3><div class="num" id="lrVerwijzers">-</div></div>
+          <div class="stat-card"><h3>Verschillende useragents</h3><div class="num" id="lrUseragents">-</div></div>
+          <div class="stat-card"><h3>Logregels gelezen</h3><div class="num" id="lrRegels">-</div><div class="sub" id="lrBestanden"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Verwijzers</h2></div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            Waar bezoekers vandaan kwamen (de Referer-kop van de browser), per site of app.
+            Zoekrobots en voorvertoningen tellen hier niet mee. "(rechtstreeks / geen verwijzer)"
+            is wie het adres intikte, een bladwijzer gebruikte of uit een app kwam die geen
+            verwijzer meestuurt. De laatste kolom is de meest voorkomende volledige link.
+          </p>
+          <table>
+            <thead><tr><th>Verwijzer</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Aandeel</th><th>Meest voorkomende link</th></tr></thead>
+            <tbody id="lrVerwijzersTabel"><tr><td colspan="4" class="empty">Laden…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Browsers, toestellen en robots</h2></div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            De useragents samengevat per soort: browser en toestel, apps met een eigen
+            browser, en zoekrobots of voorvertoningen (WhatsApp, Facebook, …).
+          </p>
+          <table>
+            <thead><tr><th>Soort</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Aandeel</th></tr></thead>
+            <tbody id="lrGroepen"><tr><td colspan="3" class="empty">Laden…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Useragents</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="lrUaFilter" onchange="renderLogReferrals()"
+                style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;">
+                <option value="alles">Alles tonen</option>
+                <option value="mensen">Zonder robots</option>
+                <option value="bots">Enkel robots</option>
+              </select>
+              <input id="lrUaZoek" type="search" placeholder="Zoeken…" oninput="renderLogReferrals()"
+                style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;width:180px;">
+            </div>
+          </div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            Elke volledige useragent-tekst met een teller. De lijst toont de 300 meest
+            voorkomende; zoek om verder te filteren.
+          </p>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>Useragent</th><th>Soort</th><th style="text-align:right;">Weergaven</th></tr></thead>
+              <tbody id="lrUaTabel"><tr><td colspan="3" class="empty">Laden…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -899,6 +990,81 @@ async function loadBezoekers() {
     : leeg(5, 'Nog geen bezoeken in deze periode');
 }
 
+// ── Logboek referrals (Caddy-toegangslogboek) ──────────────────────────────
+let lrData = null;
+
+async function loadLogReferrals(vernieuw) {
+  const dagen = document.getElementById('lrDagen').value;
+  const info = document.getElementById('lrInfo');
+  info.textContent = 'Logboek wordt gelezen… bij veel geschiedenis kan dit even duren.';
+  ['lrVerwijzersTabel', 'lrGroepen', 'lrUaTabel'].forEach(id => {
+    document.getElementById(id).innerHTML = '<tr><td colspan="4" class="empty">Laden…</td></tr>';
+  });
+  const data = await api('/admin/logboek-referrals?dagen=' + dagen + (vernieuw ? '&vernieuw=1' : ''));
+  if (!data.ok) {
+    lrData = null;
+    info.textContent = data.error || 'Logboek kon niet gelezen worden';
+    ['lrVerwijzersTabel', 'lrGroepen', 'lrUaTabel'].forEach(id => {
+      document.getElementById(id).innerHTML = '<tr><td colspan="4" class="empty">Geen gegevens</td></tr>';
+    });
+    return;
+  }
+  lrData = data;
+
+  const dt = s => s ? new Date(s).toLocaleString('nl-BE', { dateStyle: 'medium', timeStyle: 'short' }) : '?';
+  const mb = n => (n / 1048576).toFixed(1).replace('.', ',') + ' MB';
+  info.textContent =
+    'Periode in het logboek: ' + dt(data.periode.van) + ' tot ' + dt(data.periode.tot) +
+    ' · gelezen op ' + dt(data.gelezenOp) + (data.uitCache ? ' (uit het geheugen)' : '') +
+    (data.afgekapt ? ' · niet alle oude bestanden gelezen (bovengrens bereikt)' : '') +
+    (data.onleesbaar ? ' · ' + nb(data.onleesbaar) + ' onleesbare regels overgeslagen' : '');
+
+  document.getElementById('lrWeergaven').textContent = nb(data.weergaven);
+  document.getElementById('lrBots').textContent = 'waarvan ' + nb(data.bots) + ' door robots';
+  document.getElementById('lrVerwijzers').textContent = nb(data.verwijzers.length);
+  document.getElementById('lrUseragents').textContent = nb(data.useragents.length);
+  document.getElementById('lrRegels').textContent = nb(data.regels);
+  document.getElementById('lrBestanden').textContent =
+    data.bestanden.length + ' bestand' + (data.bestanden.length === 1 ? '' : 'en') + ', ' +
+    mb(data.bestanden.reduce((s, b) => s + b.grootte, 0));
+
+  renderLogReferrals();
+}
+
+function renderLogReferrals() {
+  if (!lrData) return;
+  const data = lrData;
+  const leeg = (n, tekst) => `<tr><td colspan="${n}" class="empty">${tekst}</td></tr>`;
+  const pct = (n, tot) => tot ? (100 * n / tot).toFixed(1).replace('.', ',') + ' %' : '–';
+
+  const mensen = data.weergaven - data.bots;
+  document.getElementById('lrVerwijzersTabel').innerHTML = data.verwijzers.length ? data.verwijzers.map(v => `
+    <tr><td>${v.bron.startsWith('(') ? '<em>' + esc(v.bron) + '</em>' : esc(v.bron)}</td>
+        <td style="text-align:right;">${nb(v.weergaven)}</td>
+        <td style="text-align:right;">${pct(v.weergaven, mensen)}</td>
+        <td style="max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.85rem;color:#666;" title="${esc(v.link)}">${esc(v.link)}</td></tr>`).join('')
+    : leeg(4, 'Geen paginaweergaven in deze periode');
+
+  document.getElementById('lrGroepen').innerHTML = data.groepen.length ? data.groepen.map(g => `
+    <tr><td>${esc(g.groep)}</td>
+        <td style="text-align:right;">${nb(g.aantal)}</td>
+        <td style="text-align:right;">${pct(g.aantal, data.weergaven)}</td></tr>`).join('')
+    : leeg(3, 'Geen gegevens');
+
+  const filter = document.getElementById('lrUaFilter').value;
+  const zoek = document.getElementById('lrUaZoek').value.trim().toLowerCase();
+  const isBot = u => !/·|\(app\)/.test(u.type);
+  const rijen = data.useragents
+    .filter(u => filter === 'alles' ? true : filter === 'bots' ? isBot(u) : !isBot(u))
+    .filter(u => !zoek || u.ua.toLowerCase().includes(zoek) || u.type.toLowerCase().includes(zoek))
+    .slice(0, 300);
+  document.getElementById('lrUaTabel').innerHTML = rijen.length ? rijen.map(u => `
+    <tr><td style="font-family:monospace;font-size:0.8rem;word-break:break-all;">${esc(u.ua)}</td>
+        <td style="white-space:nowrap;">${esc(u.type)}</td>
+        <td style="text-align:right;">${nb(u.aantal)}</td></tr>`).join('')
+    : leeg(3, zoek ? 'Niets gevonden' : 'Geen gegevens');
+}
+
 async function loadLogs() {
   const box = document.getElementById('logsBox');
   box.textContent = 'Laden…';
@@ -978,6 +1144,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (section === 'logs') await loadLogs();
     if (section === 'bezoekers') await loadBezoekers();
     if (section === 'klikken') await loadKlikken();
+    if (section === 'logreferrals') await loadLogReferrals(false);
   });
 });
 

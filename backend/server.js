@@ -1534,6 +1534,230 @@ app.get('/api/admin/logs', authMiddleware('admin'), (req, res) => {
     });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// LOGBOEK REFERRALS
+// ═══════════════════════════════════════════════════════════════════════════
+// Leest het toegangslogboek van Caddy (JSON, één regel per verzoek; zie
+// Caddyfile) en telt per verwijzer en per user-agent. Ook de geroteerde
+// bestanden (walbrugge-<datum>.log en .log.gz) worden meegelezen, zodat er zo
+// veel mogelijk geschiedenis in zit. Alleen HTML-pagina's tellen mee, geen
+// afbeeldingen of scripts. IP-adressen worden niet gelezen en niet bewaard.
+
+const CADDY_LOG = process.env.CADDY_LOG || '/var/log/caddy/walbrugge.log';
+const REFERRALS_MAX_BYTES = 600 * 1024 * 1024;   // bovengrens aan gelezen logdata
+const REFERRALS_CACHE_TTL = 10 * 60 * 1000;      // resultaat 10 minuten bewaren
+const REFERRALS_MAX_UA = 5000;                   // verschillende user-agents bijhouden
+const referralsCache = new Map();                // dagen -> { tijd, data } of { belofte }
+
+function caddyLogBestanden() {
+  const dir = path.dirname(CADDY_LOG);
+  const base = path.basename(CADDY_LOG).replace(/\.log$/, '');
+  let namen = [];
+  try { namen = fs.readdirSync(dir); } catch (e) { return []; }
+  return namen
+    .filter(n => n === base + '.log' || (n.startsWith(base + '-') && /\.log(\.gz)?$/.test(n)))
+    .map(n => {
+      const p = path.join(dir, n);
+      const st = fs.statSync(p);
+      return { pad: p, naam: n, mtime: st.mtimeMs, grootte: st.size, gz: n.endsWith('.gz') };
+    })
+    .sort((a, b) => b.mtime - a.mtime);          // nieuwste eerst
+}
+
+// Korte typering van een user-agent: "Chrome · Android", "Safari · iPhone",
+// "Googlebot", "Facebook (app)".
+function duidUseragent(ua) {
+  const s = String(ua || '');
+  if (!s) return 'Onbekend';
+  const bots = [
+    [/Googlebot|Google-InspectionTool|AdsBot-Google|Google-Site-Verification/i, 'Googlebot'],
+    [/bingbot|BingPreview/i, 'Bingbot'], [/Applebot/i, 'Applebot'], [/DuckDuckBot/i, 'DuckDuckBot'],
+    [/YandexBot/i, 'Yandex'], [/facebookexternalhit|meta-externalagent/i, 'Facebook (voorvertoning)'],
+    [/WhatsApp/i, 'WhatsApp (voorvertoning)'], [/LinkedInBot/i, 'LinkedIn (voorvertoning)'],
+    [/TelegramBot/i, 'Telegram (voorvertoning)'], [/GPTBot|ChatGPT-User|OAI-SearchBot/i, 'OpenAI'],
+    [/ClaudeBot|anthropic-ai|Claude-Web/i, 'Anthropic'], [/PerplexityBot/i, 'Perplexity'],
+    [/CCBot/i, 'Common Crawl'], [/Bytespider/i, 'ByteDance'], [/PetalBot/i, 'PetalBot'],
+    [/AhrefsBot/i, 'Ahrefs'], [/SemrushBot/i, 'Semrush'], [/MJ12bot/i, 'Majestic'], [/DotBot/i, 'DotBot'],
+    [/UptimeRobot|Pingdom|StatusCake/i, 'Uptime-monitor'], [/Lighthouse|Chrome-Lighthouse/i, 'Lighthouse'],
+    [/curl\//i, 'curl'], [/python-requests|python-urllib|aiohttp/i, 'Python-script'], [/Go-http-client/i, 'Go-script']
+  ];
+  for (const [re, naam] of bots) if (re.test(s)) return naam;
+  if (STATS_BOT.test(s)) return 'Bot / crawler';
+
+  const app = statsInAppBrowser(s);
+  if (app) return app;
+
+  let os = 'Overige';
+  if (/iPhone/.test(s)) os = 'iPhone';
+  else if (/iPad/.test(s) || (/Macintosh/.test(s) && /Mobile/.test(s))) os = 'iPad';
+  else if (/Android/.test(s)) os = 'Android';
+  else if (/Windows/.test(s)) os = 'Windows';
+  else if (/Macintosh|Mac OS X/.test(s)) os = 'macOS';
+  else if (/CrOS/.test(s)) os = 'ChromeOS';
+  else if (/Linux/.test(s)) os = 'Linux';
+
+  let browser = 'Overige';
+  if (/Edg(e|A|iOS)?\//.test(s)) browser = 'Edge';
+  else if (/SamsungBrowser/.test(s)) browser = 'Samsung Internet';
+  else if (/OPR\/|Opera/.test(s)) browser = 'Opera';
+  else if (/Firefox|FxiOS/.test(s)) browser = 'Firefox';
+  else if (/Chrome|CriOS/.test(s)) browser = 'Chrome';
+  else if (/Safari/.test(s)) browser = 'Safari';
+  return browser + ' · ' + os;
+}
+
+// Verwijzer terugbrengen tot iets telbaars: domein, app-naam of een label.
+function duidVerwijzer(ref, eigenHost) {
+  const r = String(ref || '').trim();
+  if (!r) return { bron: '(rechtstreeks / geen verwijzer)', eigen: false };
+  const app = /^android-app:\/\/([^/?#]+)/i.exec(r);
+  if (app) {
+    const pakket = app[1].toLowerCase();
+    return { bron: STATS_APPS[pakket] || ('app: ' + pakket.slice(0, 60)), eigen: false };
+  }
+  try {
+    const host = new URL(r).hostname.toLowerCase();
+    if (!host) return { bron: '(onleesbare verwijzer)', eigen: false };
+    if (STATS_EIGEN_HOSTS.has(host) || host === String(eigenHost || '').toLowerCase().split(':')[0]) {
+      return { bron: '(eigen site)', eigen: true };
+    }
+    return { bron: host.replace(/^www\./, ''), eigen: false };
+  } catch (e) {
+    return { bron: '(onleesbare verwijzer)', eigen: false };
+  }
+}
+
+function caddyKop(headers, naam) {
+  if (!headers) return '';
+  const v = headers[naam] || headers[naam.toLowerCase()];
+  return Array.isArray(v) ? String(v[0] || '') : String(v || '');
+}
+
+async function telReferralsUitLog(dagen) {
+  const readline = require('readline');
+  const zlib = require('zlib');
+  const bestanden = caddyLogBestanden();
+  if (!bestanden.length) throw new Error('Geen Caddy-logboek gevonden op ' + CADDY_LOG);
+
+  const cutoff = dagen > 0 ? Date.now() - dagen * 864e5 : 0;
+  const verwijzers = new Map();   // bron -> { weergaven, links: Map(url -> n) }
+  const useragents = new Map();   // ua -> n
+  const groepen = new Map();      // type -> n
+  let overige = 0;                // user-agents boven de bovengrens
+  const t = { regels: 0, onleesbaar: 0, weergaven: 0, bots: 0, bytes: 0, eersteTs: null, laatsteTs: null, afgekapt: false };
+  const gelezen = [];
+
+  for (const b of bestanden) {
+    if (cutoff && b.mtime < cutoff) continue;             // heel bestand ouder dan de periode
+    if (t.bytes + b.grootte > REFERRALS_MAX_BYTES) { t.afgekapt = true; break; }
+    t.bytes += b.grootte;
+    gelezen.push({ naam: b.naam, grootte: b.grootte });
+
+    let stroom = fs.createReadStream(b.pad);
+    if (b.gz) stroom = stroom.pipe(zlib.createGunzip());
+    const rl = readline.createInterface({ input: stroom, crlfDelay: Infinity });
+
+    for await (const regel of rl) {
+      if (!regel) continue;
+      t.regels++;
+      let e;
+      try { e = JSON.parse(regel); } catch (err) { t.onleesbaar++; continue; }
+      const q = e && e.request;
+      if (!q) continue;
+
+      // Tijdstip: Caddy logt seconden (getal) of, met time_format, een tekst.
+      let ts = typeof e.ts === 'number' ? e.ts * 1000 : Date.parse(e.ts);
+      if (isNaN(ts)) ts = null;
+      if (cutoff && ts !== null && ts < cutoff) continue;
+
+      if ((q.method || 'GET') !== 'GET') continue;
+      if (e.status && e.status !== 200) continue;
+      const pad = String(q.uri || '').split('?')[0];
+      if (/^\/(api|admin|gasten|login)(\/|$)/.test(pad)) continue;
+      const ct = caddyKop(e.resp_headers, 'Content-Type');
+      const isHtml = ct ? /text\/html/i.test(ct) : !/\.[a-z0-9]{2,5}$/i.test(pad) || /\.html?$/i.test(pad);
+      if (!isHtml) continue;
+
+      const ua = caddyKop(q.headers, 'User-Agent');
+      const ref = caddyKop(q.headers, 'Referer');
+      const type = duidUseragent(ua);
+      const bot = !ua || STATS_BOT.test(ua) || !/·|\(app\)/.test(type);
+
+      t.weergaven++;
+      if (ts !== null) {
+        if (t.eersteTs === null || ts < t.eersteTs) t.eersteTs = ts;
+        if (t.laatsteTs === null || ts > t.laatsteTs) t.laatsteTs = ts;
+      }
+      groepen.set(type, (groepen.get(type) || 0) + 1);
+
+      const uaSleutel = (ua || '(leeg)').slice(0, 400);
+      if (useragents.has(uaSleutel)) useragents.set(uaSleutel, useragents.get(uaSleutel) + 1);
+      else if (useragents.size < REFERRALS_MAX_UA) useragents.set(uaSleutel, 1);
+      else overige++;
+
+      if (bot) { t.bots++; continue; }              // verwijzers: enkel echte bezoekers
+      const v = duidVerwijzer(ref, q.host);
+      let rij = verwijzers.get(v.bron);
+      if (!rij) { rij = { weergaven: 0, eigen: v.eigen, links: new Map() }; verwijzers.set(v.bron, rij); }
+      rij.weergaven++;
+      if (ref && !v.eigen) {
+        const url = ref.slice(0, 300);
+        if (rij.links.has(url)) rij.links.set(url, rij.links.get(url) + 1);
+        else if (rij.links.size < 50) rij.links.set(url, 1);
+      }
+    }
+  }
+
+  const topLink = links => {
+    let beste = null;
+    for (const [url, n] of links) if (!beste || n > beste.n) beste = { url, n };
+    return beste ? beste.url : '';
+  };
+  const datum = ms => ms === null ? null : new Date(ms).toISOString();
+
+  return {
+    ok: true,
+    periode: { dagen, van: datum(t.eersteTs), tot: datum(t.laatsteTs) },
+    bestanden: gelezen,
+    regels: t.regels,
+    onleesbaar: t.onleesbaar,
+    weergaven: t.weergaven,
+    bots: t.bots,
+    afgekapt: t.afgekapt,
+    gelezenOp: new Date().toISOString(),
+    verwijzers: [...verwijzers.entries()]
+      .map(([bron, r]) => ({ bron, eigen: r.eigen, weergaven: r.weergaven, link: topLink(r.links) }))
+      .sort((a, b) => b.weergaven - a.weergaven),
+    useragents: [...useragents.entries()]
+      .map(([ua, aantal]) => ({ ua, type: duidUseragent(ua === '(leeg)' ? '' : ua), aantal }))
+      .sort((a, b) => b.aantal - a.aantal)
+      .concat(overige ? [{ ua: '(overige, boven de bovengrens van ' + REFERRALS_MAX_UA + ' verschillende)', type: 'Overige', aantal: overige }] : []),
+    groepen: [...groepen.entries()].map(([groep, aantal]) => ({ groep, aantal })).sort((a, b) => b.aantal - a.aantal)
+  };
+}
+
+app.get('/api/admin/logboek-referrals', authMiddleware('admin'), async (req, res) => {
+  const dagen = Math.min(Math.max(parseInt(req.query.dagen, 10) || 0, 0), 3650);   // 0 = alles
+  const vernieuw = req.query.vernieuw === '1';
+  const sleutel = String(dagen);
+  const bewaard = referralsCache.get(sleutel);
+  try {
+    if (!vernieuw && bewaard && bewaard.data && Date.now() - bewaard.tijd < REFERRALS_CACHE_TTL) {
+      return res.json({ ...bewaard.data, uitCache: true });
+    }
+    // Eén lezing tegelijk per periode; wie tegelijk klikt, wacht op dezelfde belofte.
+    if (bewaard && bewaard.belofte) return res.json(await bewaard.belofte);
+    const belofte = telReferralsUitLog(dagen);
+    referralsCache.set(sleutel, { belofte });
+    const data = await belofte;
+    referralsCache.set(sleutel, { tijd: Date.now(), data });
+    res.json(data);
+  } catch (err) {
+    referralsCache.delete(sleutel);
+    res.status(500).json({ error: 'Logboek niet leesbaar op deze server: ' + err.message });
+  }
+});
+
 // Token verification
 app.get('/api/me', authMiddleware(), (req, res) => {
   res.json({ ok: true, user: req.user });
