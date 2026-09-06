@@ -515,6 +515,203 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ═══════════════════════════════════════════════════════════════════════════
+// BEZOEKERSSTATISTIEK (serverside, zonder cookies)
+// ═══════════════════════════════════════════════════════════════════════════
+// Telt paginaweergaven en enkele gebeurtenissen (offerteknop, formulier
+// verstuurd, WhatsApp/Messenger/telefoon/e-mail, Boek B&B) op de server.
+// Er wordt niets op het toestel van de bezoeker bewaard en er wordt geen
+// IP-adres of user-agent opgeslagen. "Unieke bezoekers" per dag komen van een
+// hash met een willekeurig dagzout dat alleen in het geheugen leeft: na
+// middernacht (of een herstart) is niets meer te herleiden. Werkt dus ook voor
+// bezoekers die de cookies weigeren. Zichtbaar in het beheerpaneel (Bezoekers).
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    dag TEXT NOT NULL,
+    pad TEXT NOT NULL,
+    taal TEXT,
+    bron TEXT,
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
+    toestel TEXT,
+    bezoeker TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_visits_dag ON visits(dag);
+
+  CREATE TABLE IF NOT EXISTS events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    dag TEXT NOT NULL,
+    naam TEXT NOT NULL,
+    pad TEXT,
+    taal TEXT,
+    bron TEXT,
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
+    detail TEXT,
+    bezoeker TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_events_dag ON events(dag);
+`);
+
+// Bewaartermijn: 400 dagen (een jaar plus wat marge om jaar op jaar te vergelijken).
+try {
+  db.prepare("DELETE FROM visits WHERE ts < datetime('now', '-400 days')").run();
+  db.prepare("DELETE FROM events WHERE ts < datetime('now', '-400 days')").run();
+} catch (e) { console.warn('[stats] Opruimen mislukt:', e.message); }
+
+const STATS_EIGEN_HOSTS = new Set(['walbrugge.be', 'www.walbrugge.be', '2.28.71.249', 'localhost', '127.0.0.1']);
+const STATS_BOT = /bot|crawl|spider|slurp|preview|monitor|fetch|scan|curl|wget|python|java\/|headless|lighthouse|pingdom|uptime|facebookexternalhit|whatsapp|telegrambot|linkedinbot|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|ccbot/i;
+const STATS_EVENTS = new Set(['offerte_click', 'generate_lead', 'whatsapp_click', 'messenger_click', 'phone_click', 'email_click', 'booking_click']);
+
+function statsDag() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Brussels' });
+}
+
+// Dagzout: willekeurig, alleen in het geheugen, wisselt elke dag.
+let statsZout = { dag: '', waarde: '' };
+function statsBezoeker(req) {
+  const dag = statsDag();
+  if (statsZout.dag !== dag) statsZout = { dag, waarde: crypto.randomBytes(16).toString('hex') };
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
+  const ua = String(req.headers['user-agent'] || '');
+  return crypto.createHash('sha256').update(statsZout.waarde + '|' + ip + '|' + ua).digest('hex').slice(0, 16);
+}
+
+function statsIsBot(req) {
+  const ua = String(req.headers['user-agent'] || '');
+  return !ua || STATS_BOT.test(ua);
+}
+
+function statsToestel(req) {
+  return /Mobi|Android|iPhone|iPad/i.test(String(req.headers['user-agent'] || '')) ? 'mobiel' : 'desktop';
+}
+
+// Externe herkomst: het domein van de verwijzende site, of null als de
+// bezoeker van de site zelf komt (of er geen verwijzer is).
+function statsBron(ref, eigenHost) {
+  if (!ref) return null;
+  try {
+    const host = new URL(ref).hostname.toLowerCase();
+    if (!host || STATS_EIGEN_HOSTS.has(host) || host === String(eigenHost || '').toLowerCase().split(':')[0]) return null;
+    return host.slice(0, 120);
+  } catch (e) { return null; }
+}
+
+function statsTaal(pad) {
+  const m = /^\/(fr|en|de)(\/|$)/.exec(pad || '');
+  return m ? m[1] : 'nl';
+}
+
+function statsKort(v, n) {
+  return v == null || v === '' ? null : String(v).slice(0, n || 80);
+}
+
+const statsInsertVisit = db.prepare(`
+  INSERT INTO visits (dag, pad, taal, bron, utm_source, utm_medium, utm_campaign, toestel, bezoeker)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+const statsInsertEvent = db.prepare(`
+  INSERT INTO events (dag, naam, pad, taal, bron, utm_source, utm_medium, utm_campaign, detail, bezoeker)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+// Paginaweergaven: alles wat als HTML met status 200 vertrekt, behalve het
+// beheer en de inlog-/gastenpagina's.
+app.use((req, res, next) => {
+  if (req.method !== 'GET') return next();
+  res.on('finish', () => {
+    try {
+      const pad = req.path;
+
+      // Oude WordPress-URL's (301 uit OUDE_URLS): apart geteld als gebeurtenis,
+      // zodat zichtbaar blijft hoeveel bezoekers nog via de oude site binnenkomen.
+      // De nieuwe pagina zelf telt daarna gewoon als weergave (de browser volgt de 301).
+      if (res.statusCode === 301 && req.route && typeof OUDE_URLS === 'object'
+          && Object.prototype.hasOwnProperty.call(OUDE_URLS, req.route.path)) {
+        if (statsIsBot(req)) return;
+        statsInsertEvent.run(
+          statsDag(), 'oude_url', statsKort(pad, 200), 'nl', statsBron(req.get('referer'), req.get('host')),
+          statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
+          statsKort(OUDE_URLS[req.route.path], 120), statsBezoeker(req)
+        );
+        return;
+      }
+
+      if (res.statusCode !== 200) return;
+      if (!String(res.getHeader('content-type') || '').includes('text/html')) return;
+      if (/^\/(api|admin|gasten|login)(\/|$)/.test(pad) || /^\/(fr|en|de)\/login$/.test(pad)) return;
+      if (/^\/google[0-9a-f]+\.html$/.test(pad)) return; // Search Console-verificatie
+      if (statsIsBot(req)) return;
+      statsInsertVisit.run(
+        statsDag(), statsKort(pad, 200), statsTaal(pad), statsBron(req.get('referer'), req.get('host')),
+        statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
+        statsToestel(req), statsBezoeker(req)
+      );
+    } catch (e) { /* statistiek mag nooit een pagina breken */ }
+  });
+  next();
+});
+
+// Gebeurtenissen vanuit de pagina's (navigator.sendBeacon in app.js).
+app.post('/api/track', (req, res) => {
+  res.status(204).end();
+  try {
+    if (statsIsBot(req)) return;
+    const b = req.body || {};
+    const naam = String(b.naam || '');
+    if (!STATS_EVENTS.has(naam)) return;
+    const pad = statsKort(b.pad, 200) || '/';
+    statsInsertEvent.run(
+      statsDag(), naam, pad, statsTaal(pad),
+      statsBron(b.ref ? 'https://' + String(b.ref).replace(/^https?:\/\//, '') : '', req.get('host')),
+      statsKort(b.utm_source), statsKort(b.utm_medium), statsKort(b.utm_campaign),
+      statsKort(b.detail, 120), statsBezoeker(req)
+    );
+  } catch (e) { /* stil */ }
+});
+
+// Overzicht voor het beheerpaneel.
+app.get('/api/admin/bezoekers', authMiddleware('admin'), (req, res) => {
+  const dagen = Math.min(Math.max(parseInt(req.query.dagen, 10) || 30, 1), 400);
+  const van = new Date(Date.now() - (dagen - 1) * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/Brussels' });
+  const tot = statsDag();
+  const w = 'WHERE dag >= ? AND dag <= ?';
+  const all = (sql, ...p) => db.prepare(sql).all(...p);
+  const get = (sql, ...p) => db.prepare(sql).get(...p);
+
+  const totaal = get(`SELECT COUNT(*) AS weergaven, COUNT(DISTINCT bezoeker || dag) AS bezoekers FROM visits ${w}`, van, tot);
+  const events = all(`SELECT naam, COUNT(*) AS aantal FROM events ${w} GROUP BY naam ORDER BY aantal DESC`, van, tot);
+  const perDag = all(`
+    SELECT d.dag,
+      (SELECT COUNT(*) FROM visits v WHERE v.dag = d.dag) AS weergaven,
+      (SELECT COUNT(DISTINCT bezoeker) FROM visits v WHERE v.dag = d.dag) AS bezoekers,
+      (SELECT COUNT(*) FROM events e WHERE e.dag = d.dag AND e.naam = 'generate_lead') AS leads
+    FROM (SELECT DISTINCT dag FROM visits ${w} UNION SELECT DISTINCT dag FROM events ${w}) d
+    ORDER BY d.dag DESC`, van, tot, van, tot);
+  const bronnen = all(`
+    SELECT COALESCE(v.bron, '') AS bron, COUNT(*) AS weergaven,
+      (SELECT COUNT(*) FROM events e WHERE e.naam = 'generate_lead' AND COALESCE(e.bron, '') = COALESCE(v.bron, '') AND e.dag >= ? AND e.dag <= ?) AS leads
+    FROM visits v ${w} GROUP BY COALESCE(v.bron, '') ORDER BY weergaven DESC LIMIT 20`, van, tot, van, tot);
+  const paginas = all(`SELECT pad, COUNT(*) AS aantal FROM visits ${w} GROUP BY pad ORDER BY aantal DESC LIMIT 20`, van, tot);
+  const campagnes = all(`
+    SELECT utm_source, utm_medium, utm_campaign, COUNT(*) AS weergaven,
+      (SELECT COUNT(*) FROM events e WHERE e.naam = 'generate_lead' AND COALESCE(e.utm_campaign,'') = COALESCE(v.utm_campaign,'') AND COALESCE(e.utm_source,'') = COALESCE(v.utm_source,'') AND e.dag >= ? AND e.dag <= ?) AS leads
+    FROM visits v ${w} AND (utm_source IS NOT NULL OR utm_campaign IS NOT NULL)
+    GROUP BY utm_source, utm_medium, utm_campaign ORDER BY weergaven DESC LIMIT 20`, van, tot, van, tot);
+  const talen = all(`SELECT taal, COUNT(*) AS aantal FROM visits ${w} GROUP BY taal ORDER BY aantal DESC`, van, tot);
+  const toestellen = all(`SELECT toestel, COUNT(*) AS aantal FROM visits ${w} GROUP BY toestel ORDER BY aantal DESC`, van, tot);
+  const eventsDetail = all(`
+    SELECT naam, COALESCE(detail, '') AS detail, COALESCE(pad, '') AS pad, COUNT(*) AS aantal
+    FROM events ${w} GROUP BY naam, detail, pad ORDER BY aantal DESC LIMIT 40`, van, tot);
+
+  res.json({ ok: true, periode: { van, tot, dagen }, totaal, events, perDag, bronnen, paginas, campagnes, talen, toestellen, eventsDetail });
+});
+
+
 // Dynamische sitemap: statische paginas + gepubliceerde blogartikels
 app.get('/sitemap.xml', (req, res) => {
   const staticSitemap = fs.readFileSync(path.join(__dirname, '..', 'public', 'sitemap.xml'), 'utf-8');
