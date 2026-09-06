@@ -647,6 +647,38 @@ app.get('/fr', serveerHomepage('fr'));
 app.get('/en', serveerHomepage('en'));
 app.get('/de', serveerHomepage('de'));
 
+// ── Oude WordPress-URL's ────────────────────────────────────────────────
+// Google heeft de adressen van de vorige site nog in zijn index. Elk daarvan
+// krijgt hier één 301 naar zijn nieuwe tegenhanger — vóór de slash-middleware,
+// zodat /bedrijven/ en /bedrijven allebei in één sprong aankomen in plaats
+// van via twee omleidingen. Express matcht beide vormen (geen strict routing).
+// De query string blijft behouden: advertentieklikken dragen een gclid.
+const OUDE_URLS = {
+  '/bedrijven':       '/teams',
+  '/zakelijk':        '/teams',
+  '/coworking':       '/teams',
+  '/vergaderzaal':    '/teams',
+  '/vergaderzalen':   '/teams',
+  '/teambuilding':    '/teams',
+  '/feestzaal':       '/feesten',
+  '/privefeesten':    '/feesten',
+  '/trouwfeest':      '/feesten#trouwfeest',
+  '/communiefeest':   '/feesten#familiefeest',
+  '/bed-breakfast':   '/bb',
+  '/kamer':           '/bb',
+  '/kamer/*':         '/bb',
+  '/key-selling-point/*': '/bb',
+  '/faciliteiten':    '/over-ons',
+  '/huisreglement':   '/algemene-voorwaarden'
+};
+Object.entries(OUDE_URLS).forEach(([oud, nieuw]) => {
+  app.get(oud, (req, res) => {
+    const q = req.url.indexOf('?') !== -1 ? req.url.slice(req.url.indexOf('?')) : '';
+    const [pad, hash] = nieuw.split('#');
+    res.redirect(301, pad + q + (hash ? '#' + hash : ''));
+  });
+});
+
 // Eén URL per pagina. /teams/ en /index.html gaven eerder gewoon 200 met
 // dezelfde inhoud als de canonieke URL; dat is duplicate content. Deze
 // middleware moet vóór express.static staan.
@@ -1519,17 +1551,8 @@ app.post('/api/admin/blog-categories', authMiddleware('admin'), (req, res) => {
 // REDIRECTS (oude URLs naar nieuwe)
 // ═══════════════════════════════════════════════════════════════════════════
 
-app.get('/feestzaal', (req, res) => res.redirect(301, '/feesten'));
-app.get('/zakelijk', (req, res) => res.redirect(301, '/teams'));
-app.get('/privefeesten', (req, res) => res.redirect(301, '/feesten'));
-// /bedrijven gaf 404 sinds de overstap; het was de landingspagina van de
-// zoekadvertenties en staat nog in Google Ads als conversieactie.
-app.get('/bedrijven', (req, res) => res.redirect(301, '/teams'));
-app.get('/vergaderzaal', (req, res) => res.redirect(301, '/teams'));
-app.get('/vergaderzalen', (req, res) => res.redirect(301, '/teams'));
-app.get('/teambuilding', (req, res) => res.redirect(301, '/teams'));
-app.get('/trouwfeest', (req, res) => res.redirect(301, '/feesten#trouwfeest'));
-app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest'));
+// De omleidingen van oude URL's staan in OUDE_URLS, hogerop, vóór de
+// slash-middleware — zodat ook /bedrijven/ in één sprong op /teams komt.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PAGE ROUTES (SPA-style routing)
@@ -2073,7 +2096,7 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ═══════════════════════════════════════════════════════════════════════════
 
-app.listen(PORT, '127.0.0.1', () => {
+const server = app.listen(PORT, '127.0.0.1', () => {
   console.log(`
   ╔════════════════════════════════════════════════╗
   ║  🏡 Walbrugge Backend Server                   ║
@@ -2082,9 +2105,22 @@ app.listen(PORT, '127.0.0.1', () => {
   `);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Shutting down...');
-  db.close();
-  process.exit(0);
-});
+// Netjes afsluiten bij een herstart (deploy): eerst geen nieuwe verbindingen
+// meer aannemen en de lopende verzoeken afwerken, dan pas stoppen. Voorheen
+// stopte het proces meteen, waardoor een verzoek dat net binnen was een 502
+// kreeg — Caddy's lb_try_duration vangt enkel mislukte verbindingen op, geen
+// afgebroken verzoeken.
+function sluitNetjesAf(signaal) {
+  console.log('Shutting down (' + signaal + ')...');
+  const noodstop = setTimeout(() => {
+    console.error('[shutdown] lopende verzoeken niet op tijd klaar, geforceerd gestopt');
+    process.exit(1);
+  }, 8000);
+  noodstop.unref();
+  server.close(() => {
+    try { db.close(); } catch (e) { /* al dicht */ }
+    process.exit(0);
+  });
+}
+process.on('SIGTERM', () => sluitNetjesAf('SIGTERM'));
+process.on('SIGINT', () => sluitNetjesAf('SIGINT'));
