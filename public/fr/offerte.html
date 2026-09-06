@@ -36,8 +36,8 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://walbrugge.be/"},{"@type":"ListItem","position":2,"name":"Fr","item":"https://walbrugge.be/fr"},{"@type":"ListItem","position":3,"name":"Offerte","item":"https://walbrugge.be/fr/offerte"}]}
 </script>
-<!-- Cookie Consent + LinkedIn (loads after consent) -->
-<script src="/assets/js/cookie-consent.js" defer></script>
+<!-- Cookie Consent + Google Analytics + LinkedIn (loads after consent) -->
+<script src="/assets/js/cookie-consent.js?v=2" defer></script>
 <style>
 .confirm-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; }
 .confirm-modal-backdrop { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); }
@@ -297,6 +297,7 @@ document.getElementById('offerteForm').addEventListener('submit', async function
     const result = await res.json();
 
     if (res.ok && result.ok) {
+      if (window.walbruggeTrack) window.walbruggeTrack('generate_lead', { form: 'offerte', event_type: data.type || '' });
       form.reset();
       showConfirmModal('Demande envoyée !', 'Merci pour votre demande. Nous vous contacterons dans les 24 heures.');
       msg.textContent = '';

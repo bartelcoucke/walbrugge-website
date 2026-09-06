@@ -1,37 +1,55 @@
 /**
  * Cookie Consent Manager — Domein Walbrugge
- * Blokkeert tracking scripts tot de bezoeker toestemming geeft.
- * Voldoet aan ePrivacy-richtlijn + GDPR.
+ * Blokkeert tracking scripts (Google Analytics 4, LinkedIn Insight Tag)
+ * tot de bezoeker toestemming geeft.
+ * Voldoet aan ePrivacy-richtlijn + GDPR. Google Consent Mode v2.
  */
 (function () {
   'use strict';
 
   var COOKIE_NAME = 'walbrugge_consent';
   var COOKIE_DAYS = 365;
+  var GA_ID = 'G-DXDNTM0H5X';
+  var LI_PARTNER_ID = '9619338';
+
+  /* ── Google Consent Mode v2: standaard alles geweigerd, vóór gtag ooit laadt ── */
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { window.dataLayer.push(arguments); }
+  window.gtag = window.gtag || gtag;
+  window.gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+    functionality_storage: 'denied',
+    personalization_storage: 'denied',
+    security_storage: 'granted',
+    wait_for_update: 500
+  });
 
   /* ── i18n teksten ── */
   var LANG = document.documentElement.lang || 'nl';
   var T = {
     nl: {
-      text: 'Deze website gebruikt cookies voor analyse en om uw ervaring te verbeteren. Meer info in ons <a href="/privacy">privacybeleid</a>.',
+      text: 'Deze website gebruikt cookies voor analyse (Google Analytics, LinkedIn) en om uw ervaring te verbeteren. Meer info in ons <a href="/privacy">privacybeleid</a>.',
       accept: 'Alle cookies aanvaarden',
       reject: 'Alleen noodzakelijke',
       settings: 'Instellingen'
     },
     fr: {
-      text: 'Ce site utilise des cookies pour l\'analyse et pour améliorer votre expérience. Plus d\'informations dans notre <a href="/fr/privacy">politique de confidentialité</a>.',
+      text: 'Ce site utilise des cookies pour l\'analyse (Google Analytics, LinkedIn) et pour améliorer votre expérience. Plus d\'informations dans notre <a href="/fr/privacy">politique de confidentialité</a>.',
       accept: 'Accepter tous les cookies',
       reject: 'Cookies essentiels uniquement',
       settings: 'Paramètres'
     },
     en: {
-      text: 'This website uses cookies for analytics and to improve your experience. Learn more in our <a href="/en/privacy">privacy policy</a>.',
+      text: 'This website uses cookies for analytics (Google Analytics, LinkedIn) and to improve your experience. Learn more in our <a href="/en/privacy">privacy policy</a>.',
       accept: 'Accept all cookies',
       reject: 'Essential only',
       settings: 'Settings'
     },
     de: {
-      text: 'Diese Website verwendet Cookies für Analysen und um Ihr Erlebnis zu verbessern. Mehr dazu in unserer <a href="/de/privacy">Datenschutzerklärung</a>.',
+      text: 'Diese Website verwendet Cookies für Analysen (Google Analytics, LinkedIn) und um Ihr Erlebnis zu verbessern. Mehr dazu in unserer <a href="/de/privacy">Datenschutzerklärung</a>.',
       accept: 'Alle Cookies akzeptieren',
       reject: 'Nur notwendige',
       settings: 'Einstellungen'
@@ -50,12 +68,38 @@
     document.cookie = name + '=' + value + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax;Secure';
   }
 
+  /* ── Google Analytics 4 loader (enkel na toestemming) ── */
+  function loadGA() {
+    if (window._walbrugge_ga_loaded) return;
+    window._walbrugge_ga_loaded = true;
+
+    window.gtag('consent', 'update', {
+      ad_storage: 'granted',
+      ad_user_data: 'granted',
+      ad_personalization: 'granted',
+      analytics_storage: 'granted',
+      functionality_storage: 'granted',
+      personalization_storage: 'granted'
+    });
+
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+
+    window.gtag('js', new Date());
+    window.gtag('config', GA_ID, {
+      anonymize_ip: true,
+      page_language: LANG
+    });
+  }
+
   /* ── LinkedIn Insight Tag loader ── */
   function loadLinkedIn() {
     if (window._walbrugge_li_loaded) return;
     window._walbrugge_li_loaded = true;
 
-    window._linkedin_partner_id = '9619338';
+    window._linkedin_partner_id = LI_PARTNER_ID;
     window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
     window._linkedin_data_partner_ids.push(window._linkedin_partner_id);
 
@@ -72,15 +116,45 @@
     img.width = 1;
     img.style.display = 'none';
     img.alt = '';
-    img.src = 'https://px.ads.linkedin.com/collect/?pid=9619338&fmt=gif';
+    img.src = 'https://px.ads.linkedin.com/collect/?pid=' + LI_PARTNER_ID + '&fmt=gif';
     document.body.appendChild(img);
+  }
+
+  function loadTracking() {
+    loadGA();
+    loadLinkedIn();
+  }
+
+  /* ── Conversie-events (worden alleen verstuurd als GA geladen is) ──
+   * Gebruik in pagina's: window.walbruggeTrack('generate_lead', { form: 'offerte' });
+   */
+  window.walbruggeTrack = function (eventName, params) {
+    if (!window._walbrugge_ga_loaded) return;
+    try {
+      window.gtag('event', eventName, params || {});
+    } catch (e) { /* stil falen */ }
+  };
+
+  function trackClicks() {
+    document.addEventListener('click', function (ev) {
+      var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+      if (href.indexOf('bookingengine.mylighthouse.com') !== -1) {
+        window.walbruggeTrack('booking_click', { link_url: href, link_text: (a.textContent || '').trim().slice(0, 80), page_language: LANG });
+      } else if (href.indexOf('tel:') === 0) {
+        window.walbruggeTrack('phone_click', { link_url: href, page_language: LANG });
+      } else if (href.indexOf('mailto:') === 0) {
+        window.walbruggeTrack('email_click', { link_url: href, page_language: LANG });
+      }
+    }, true);
   }
 
   /* ── Consent handlers ── */
   function acceptAll() {
     setCookie(COOKIE_NAME, 'all', COOKIE_DAYS);
     hideBanner();
-    loadLinkedIn();
+    loadTracking();
   }
   function rejectOptional() {
     setCookie(COOKIE_NAME, 'essential', COOKIE_DAYS);
@@ -138,9 +212,10 @@
 
   /* ── Init ── */
   function init() {
+    trackClicks();
     var consent = getCookie(COOKIE_NAME);
     if (consent === 'all') {
-      loadLinkedIn();
+      loadTracking();
     } else if (consent === 'essential') {
       // Do nothing — no tracking
     } else {
