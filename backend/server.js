@@ -425,6 +425,18 @@ db.exec(`
     last_used_at DATETIME
   );
 
+  -- Zichtbare beoordelingsscores per bron. Google wordt automatisch
+  -- bijgewerkt; Booking.com en Eventplanner beheert de beheerder zelf,
+  -- omdat die partijen geen publieke koppeling aanbieden.
+  CREATE TABLE IF NOT EXISTS site_scores (
+    bron TEXT PRIMARY KEY,
+    score TEXT NOT NULL,
+    aantal INTEGER,
+    url TEXT,
+    automatisch INTEGER DEFAULT 0,
+    bijgewerkt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   -- Openstaande herstelcodes voor een vergeten wachtwoord.
   CREATE TABLE IF NOT EXISTS password_resets (
     challenge TEXT PRIMARY KEY,
@@ -1625,6 +1637,13 @@ async function haalGoogleReviews() {
 
   fs.mkdirSync(path.dirname(PLACES_CACHE), { recursive: true });
   fs.writeFileSync(PLACES_CACHE, JSON.stringify(bewaard, null, 1));
+
+  // De zichtbare score op de site mee bijwerken.
+  if (bewaard.score) {
+    db.prepare(`UPDATE site_scores SET score = ?, aantal = ?, url = ?,
+                bijgewerkt = CURRENT_TIMESTAMP WHERE bron = 'google'`)
+      .run(String(bewaard.score).replace('.', ','), bewaard.aantal, bewaard.kaartUrl);
+  }
   console.log('[google] Score ' + bewaard.score + ' uit ' + bewaard.aantal +
               ' beoordelingen, ' + reviews.length + ' reviews bewaard');
   return bewaard;
@@ -1646,6 +1665,48 @@ async function ververGoogleReviews() {
 // Bij de start en daarna elke zes uur kijken of de cache ververst moet worden.
 setTimeout(ververGoogleReviews, 20000).unref();
 setInterval(ververGoogleReviews, 6 * 60 * 60 * 1000).unref();
+
+// ── Zichtbare scores ──────────────────────────────────────────────────────
+// Startwaarden: wat er op de site stond. De beheerder past ze aan in het
+// beheerpaneel; Google wordt automatisch overschreven zodra de API-sleutel
+// ingesteld is.
+const START_SCORES = [
+  ['google', '5,0', null, 'https://www.google.com/search?q=domein+walbrugge', 1],
+  ['booking', '9,7', null, 'https://www.booking.com/hotel/be/walbrugge.nl.html', 0],
+  ['eventplanner', '10/10', null, 'https://www.eventplanner.be/directory/13607_walbrugge.html', 0]
+];
+START_SCORES.forEach(r => {
+  db.prepare(`INSERT OR IGNORE INTO site_scores (bron, score, aantal, url, automatisch)
+              VALUES (?, ?, ?, ?, ?)`).run(r[0], r[1], r[2], r[3], r[4]);
+});
+
+function leesScores() {
+  const rijen = db.prepare('SELECT * FROM site_scores').all();
+  const uit = {};
+  rijen.forEach(r => {
+    uit[r.bron] = { score: r.score, aantal: r.aantal, url: r.url,
+                    automatisch: !!r.automatisch, bijgewerkt: r.bijgewerkt };
+  });
+  return uit;
+}
+
+app.get('/api/scores', (req, res) => {
+  res.json({ ok: true, scores: leesScores() });
+});
+
+app.put('/api/admin/scores/:bron', authMiddleware('admin'), (req, res) => {
+  const { score, aantal, url } = req.body || {};
+  if (!score || !String(score).trim()) {
+    return res.status(400).json({ error: 'Vul een score in' });
+  }
+  const bestaat = db.prepare('SELECT bron FROM site_scores WHERE bron = ?').get(req.params.bron);
+  if (!bestaat) return res.status(404).json({ error: 'Onbekende bron' });
+
+  db.prepare(`UPDATE site_scores SET score = ?, aantal = ?, url = COALESCE(?, url),
+              bijgewerkt = CURRENT_TIMESTAMP WHERE bron = ?`)
+    .run(String(score).trim(), aantal || null, url || null, req.params.bron);
+  res.json({ ok: true, scores: leesScores() });
+});
 
 app.get('/api/reviews', (req, res) => {
   const cache = leesReviewCache();

@@ -283,3 +283,24 @@
   document.body.classList.add('loaded');
 
 })();
+
+/* ── Beoordelingsscores actueel houden ──────────────────────────────────
+ * De waarden in de HTML zijn de laatst bekende stand. Dit haalt de actuele
+ * scores op: Google komt automatisch uit de Places API, Booking.com en
+ * Eventplanner beheert de eigenaar in het beheerpaneel.
+ */
+(function () {
+  var velden = document.querySelectorAll('[data-score]');
+  if (!velden.length) return;
+
+  fetch('/api/scores')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.ok) return;
+      velden.forEach(function (el) {
+        var bron = d.scores[el.getAttribute('data-score')];
+        if (bron && bron.score) el.textContent = bron.score;
+      });
+    })
+    .catch(function () { /* stil falen: de HTML-waarde blijft staan */ });
+})();

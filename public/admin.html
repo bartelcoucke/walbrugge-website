@@ -93,6 +93,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
       <a href="#" data-section="contacts">💬 Aanvragen</a>
       <a href="#" data-section="rooms">🛏️ Kamers</a>
       <a href="#" data-section="blog">✍️ Blog</a>
+      <a href="#" data-section="scores">⭐ Scores</a>
       <a href="#" data-section="devices">🔐 Toestellen</a>
       <a href="#" data-section="logs">📋 Logboek</a>
     </nav>
@@ -221,6 +222,32 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
         </div>
       </section>
       
+      <!-- Beoordelingsscores -->
+      <section id="section-scores" class="section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Beoordelingsscores</h2>
+          </div>
+          <p style="margin:0 0 16px;color:#666;font-size:0.9rem;">
+            Deze scores staan zichtbaar op de website. Google werkt zichzelf dagelijks
+            bij zodra de API-sleutel ingesteld is; Booking.com en Eventplanner bieden
+            geen koppeling aan, die past u hier zelf aan.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Bron</th>
+                <th>Score</th>
+                <th>Aantal</th>
+                <th>Bijgewerkt</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="scoresList"></tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Vertrouwde toestellen -->
       <section id="section-devices" class="section" style="display:none;">
         <div class="card">
@@ -538,6 +565,42 @@ async function loadDevices() {
   }
 }
 
+const BRON_NAAM = { google: 'Google', booking: 'Booking.com', eventplanner: 'Eventplanner' };
+
+async function loadScores() {
+  const data = await api('/scores');
+  const tbody = document.getElementById('scoresList');
+  if (!data.ok) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Kon scores niet laden</td></tr>'; return; }
+
+  const datum = w => w ? new Date(w.replace(' ', 'T') + 'Z').toLocaleString('nl-BE') : '—';
+
+  tbody.innerHTML = Object.entries(data.scores).map(([bron, s]) => `
+    <tr>
+      <td><strong>${BRON_NAAM[bron] || bron}</strong>${s.automatisch ? '<br><small style="color:#4a6b3c;">werkt zichzelf bij</small>' : ''}</td>
+      <td><input id="score-${bron}" value="${(s.score || '').replace(/"/g,'&quot;')}"
+           style="width:90px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;"></td>
+      <td><input id="aantal-${bron}" type="number" min="0" value="${s.aantal ?? ''}" placeholder="—"
+           style="width:90px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;"></td>
+      <td style="font-size:0.85rem;color:#7a7068;">${datum(s.bijgewerkt)}</td>
+      <td style="text-align:right;">
+        <button onclick="saveScore('${bron}')" class="btn btn-outline btn-sm">Bewaren</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function saveScore(bron) {
+  const data = await api('/admin/scores/' + bron, {
+    method: 'PUT',
+    body: JSON.stringify({
+      score: document.getElementById('score-' + bron).value,
+      aantal: parseInt(document.getElementById('aantal-' + bron).value, 10) || null
+    })
+  });
+  if (data.ok) await loadScores();
+  else alert(data.error || 'Bewaren mislukt');
+}
+
 let logRegels = [];
 
 async function loadLogs() {
@@ -615,6 +678,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (section === 'contacts') await loadContacts();
     if (section === 'rooms') await loadRooms();
     if (section === 'blog') await loadBlog();
+    if (section === 'scores') await loadScores();
     if (section === 'devices') await loadDevices();
     if (section === 'logs') await loadLogs();
   });
