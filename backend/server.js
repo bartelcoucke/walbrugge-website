@@ -790,7 +790,7 @@ app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Serve specific HTML pages
-const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'algemene-voorwaarden', 'login', 'admin', 'blog'];
+const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'algemene-voorwaarden', 'login', 'admin'];
 
 // llms.txt — plain text voor AI-bots
 app.get('/llms.txt', (req, res) => {
@@ -800,6 +800,57 @@ app.get('/llms.txt', (req, res) => {
   } else {
     res.status(404).type('text/plain').send('Not found');
   }
+});
+
+// Blog overzicht — server-side rendering voor SEO
+// De bestaande JavaScript voor dynamische filtering en load more blijft werken.
+app.get('/blog', (req, res) => {
+  const templatePath = path.join(__dirname, '..', 'public', 'blog.html');
+  let html = fs.readFileSync(templatePath, 'utf-8');
+
+  try {
+    const posts = db.prepare(
+      "SELECT id, title, slug, excerpt, category, featured_image, published_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC"
+    ).all();
+
+    const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const cardsHtml = posts.map(post => {
+      const date = new Date(post.published_at).toLocaleDateString('nl-BE', { year: 'numeric', month: 'long', day: 'numeric' });
+      const img = esc(post.featured_image || '/assets/img/hero.jpg');
+      return `<article class="blog-card">
+          <a href="/blog/${post.slug}" class="blog-card-link">
+            <div class="blog-card-image">
+              <img src="${img}" alt="${esc(post.title)}" loading="lazy">
+            </div>
+            <div class="blog-card-content">
+              ${post.category ? `<span class="blog-card-category">${esc(post.category)}</span>` : ''}
+              <h3>${esc(post.title)}</h3>
+              <p>${esc(post.excerpt || '')}</p>
+              <time>${date}</time>
+            </div>
+          </a>
+        </article>`;
+    }).join('\n');
+
+    const totalPosts = posts.length;
+    const initialCount = Math.min(totalPosts, 9);
+
+    // Vervang de laadindicator door server-side gerenderde posts
+    html = html.replace(
+      '<div class="blog-loading">\n        <p>Artikelen laden...</p>\n      </div>',
+      cardsHtml || '<div class="blog-empty"><p>Nog geen artikelen.</p></div>'
+    );
+
+    // Injecteer SSR state zodat de JavaScript weet dat posts al geladen zijn
+    const ssrScript = `<script>\n(function(){\nvar g=document.getElementById('blogGrid');\nif(g&&g.querySelector('.blog-card')){\nwindow.__ssrRendered=${initialCount};\nwindow.__ssrTotal=${totalPosts};\n}\n})();\n<\/script>`;
+    html = html.replace('</head>', ssrScript + '\n</head>');
+
+  } catch (e) {
+    console.error('Blog SSR error:', e);
+  }
+
+  res.send(html);
 });
 
 pages.forEach(page => {
@@ -936,6 +987,9 @@ languages.forEach(lang => {
     if (retiredPages[page]) return; // al afgehandeld hierboven
     app.get(`/${lang}/${page}`, serveLang(`${page}.html`, `/${page}`));
   });
+
+  // Blog taalroutes — geen vertaalde blog.html, dus redirect naar NL blog (SSR)
+  app.get(`/${lang}/blog`, serveLang('blog.html', '/blog'));
 
   ruimtes.forEach(ruimte => {
     app.get(`/${lang}/ruimtes/${ruimte}`, serveLang(path.join('ruimtes', `${ruimte}.html`), `/ruimtes/${ruimte}`));

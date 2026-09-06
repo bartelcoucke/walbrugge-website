@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+    <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/cormorant-garamond-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/assets/css/fonts.css">
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Blog · Inspiratie & Verhalen · Domein Walbrugge</title>
@@ -8,9 +12,7 @@
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://walbrugge.be/blog">
 <link rel="icon" type="image/png" href="/assets/img/favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <link rel="stylesheet" href="/assets/css/style.css">
 <!-- Open Graph -->
 <meta property="og:title" content="Blog · Inspiratie & Verhalen · Domein Walbrugge">
@@ -35,7 +37,7 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="/" class="nav-logo"><img src="/assets/img/walbrugge_logo_round.png" alt="Domein Walbrugge" width="136" height="136"></a>
+    <a href="/" class="nav-logo"><img src="/assets/img/walbrugge_logo_round.webp" alt="Domein Walbrugge" width="136" height="136"></a>
     <nav class="nav-links" id="navLinks" aria-label="Hoofdnavigatie">
       <a href="/teams">Teams &amp; Organisaties</a>
       <a href="/feesten">Feesten &amp; Samenzijn</a>
@@ -109,7 +111,7 @@
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <img src="/assets/img/walbrugge_logo_round.png" alt="Domein Walbrugge" width="90" height="90">
+        <img src="/assets/img/walbrugge_logo_round.webp" alt="Domein Walbrugge" width="90" height="90" loading="lazy">
         <p>Een 18e-eeuwse vierkantshoeve aan de voet van de Tiegemberg.</p>
       </div>
       <div class="footer-links">
@@ -160,11 +162,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const limit = 9;
   let totalPosts = 0;
   
-  // Load posts
+  // Check of er SSR pre-rendered posts in de grid staan
+  const ssrCards = grid ? grid.querySelectorAll('.blog-card') : [];
+  const ssrRendered = window.__ssrRendered || 0;
+  const ssrTotal = window.__ssrTotal || 0;
+  
+  // Laad posts
   async function loadPosts(reset = false) {
     if (reset) {
       currentOffset = 0;
-      grid.innerHTML = '<div class="blog-loading"><p>Artikelen laden...</p></div>';
+      // Bij filter-wissel alle SSR cards + JS cards wissen, en laadindicator tonen
+      if (grid) grid.innerHTML = '<div class="blog-loading"><p>Artikelen laden...</p></div>';
     }
     
     try {
@@ -173,7 +181,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const data = await res.json();
       
       if (reset) {
-        grid.innerHTML = '';
+        // Eerste load of filter switch: grid wissen en opnieuw vullen
+        if (grid) grid.innerHTML = '';
       }
       
       totalPosts = data.total;
@@ -202,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </a>
         `;
-        grid.appendChild(card);
+        if (grid) grid.appendChild(card);
       });
       
       currentOffset += data.posts.length;
@@ -215,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
     } catch (e) {
-      grid.innerHTML = '<p>Kon artikelen niet laden.</p>';
+      if (grid) grid.innerHTML = '<p>Kon artikelen niet laden.</p>';
     }
   }
   
@@ -232,8 +241,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load more click handler
   loadMoreBtn.addEventListener('click', () => loadPosts(false));
   
-  // Initial load
-  loadPosts(true);
+  // Initial load: alleen laden als er geen SSR cards zijn
+  if (ssrRendered === 0 || ssrCards.length === 0) {
+    loadPosts(true);
+  } else {
+    // SSR cards zijn al aanwezig; stel offset correct in voor load more
+    currentOffset = ssrRendered;
+    totalPosts = ssrTotal;
+    if (currentOffset >= totalPosts) {
+      loadMore.style.display = 'none';
+    } else {
+      loadMore.style.display = 'block';
+    }
+  }
 });
 </script>
 
