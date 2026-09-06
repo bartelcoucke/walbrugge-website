@@ -420,12 +420,32 @@ async function loadRooms() {
       <tr>
         <td><strong>${r.name}</strong><br><small>${r.description || ''}</small></td>
         <td>${r.capacity} pers.</td>
-        <td>€${r.price_base}</td>
+        <td>
+          <input type="number" value="${r.price_base}" min="0" step="1"
+            style="width:80px;padding:4px 8px;border:1px solid #ddd;border-radius:6px;font-size:0.9rem;"
+            onchange="updateRoomPrice(${r.id}, this.value)">
+          <span style="color:var(--muted);font-size:0.85rem;"> €/nacht</span>
+        </td>
         <td><span class="badge badge-confirmed">${r.available ? 'Beschikbaar' : 'Niet beschikbaar'}</span></td>
       </tr>
     `).join('');
   } else {
     tbody.innerHTML = '<tr><td colspan="4" class="empty">Geen kamers</td></tr>';
+  }
+}
+
+async function updateRoomPrice(id, price) {
+  const data = await api('/rooms/' + id, {
+    method: 'PUT',
+    body: JSON.stringify({ price_base: parseFloat(price) })
+  });
+  if (data.ok) {
+    const el = event.target;
+    el.style.borderColor = '#4a6b3c';
+    el.style.background = '#e8f5e9';
+    setTimeout(() => { el.style.borderColor = '#ddd'; el.style.background = ''; }, 1500);
+  } else {
+    alert('Fout bij opslaan: ' + (data.error || 'onbekend'));
   }
 }
 

@@ -605,6 +605,31 @@ app.get('/api/rooms/:slug', (req, res) => {
   res.json({ ok: true, room });
 });
 
+// Update room (admin only)
+app.put('/api/rooms/:id', authMiddleware('admin'), (req, res) => {
+  const { name, description, capacity, price_base, available } = req.body;
+  const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
+  if (!room) return res.status(404).json({ error: 'Kamer niet gevonden' });
+  
+  db.prepare(`UPDATE rooms SET 
+    name = COALESCE(?, name),
+    description = COALESCE(?, description),
+    capacity = COALESCE(?, capacity),
+    price_base = COALESCE(?, price_base),
+    available = COALESCE(?, available)
+    WHERE id = ?`
+  ).run(
+    name || null, description || null, 
+    capacity != null ? capacity : null, 
+    price_base != null ? price_base : null,
+    available != null ? available : null,
+    req.params.id
+  );
+  
+  const updated = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
+  res.json({ ok: true, room: updated });
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ADMIN ROUTES
 // ═══════════════════════════════════════════════════════════════════════════
@@ -790,7 +815,33 @@ app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Serve specific HTML pages
-const pages = ['feestzaal', 'bb', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'algemene-voorwaarden', 'login', 'admin'];
+const pages = ['feestzaal', 'zakelijk', 'teams', 'feesten', 'over-ons', 'contact', 'offerte', 'privacy', 'algemene-voorwaarden', 'login', 'admin'];
+
+// B&B pagina — prijzen server-side uit database
+function serveBBPage(lang) {
+  return (req, res) => {
+    const dir = lang ? path.join(__dirname, '..', 'public', lang) : path.join(__dirname, '..', 'public');
+    const file = path.join(dir, 'bb.html');
+    if (!fs.existsSync(file)) {
+      return lang ? res.redirect(301, '/bb') : res.status(404).sendFile(path.join(__dirname, '..', 'public', '404.html'));
+    }
+    let html = fs.readFileSync(file, 'utf-8');
+    try {
+      const rooms = db.prepare('SELECT slug, price_base FROM rooms').all();
+      rooms.forEach(r => {
+        const key = '{{PRICE_' + r.slug.toUpperCase().replace(/-/g, '_') + '}}';
+        html = html.split(key).join(Math.round(r.price_base).toString());
+      });
+    } catch (e) {
+      console.error('BB price injection error:', e.message);
+    }
+    res.send(html);
+  };
+}
+app.get('/bb', serveBBPage(null));
+app.get('/fr/bb', serveBBPage('fr'));
+app.get('/en/bb', serveBBPage('en'));
+app.get('/de/bb', serveBBPage('de'));
 
 // llms.txt — plain text voor AI-bots
 app.get('/llms.txt', (req, res) => {
