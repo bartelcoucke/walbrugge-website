@@ -1522,6 +1522,12 @@ app.post('/api/admin/blog-categories', authMiddleware('admin'), (req, res) => {
 app.get('/feestzaal', (req, res) => res.redirect(301, '/feesten'));
 app.get('/zakelijk', (req, res) => res.redirect(301, '/teams'));
 app.get('/privefeesten', (req, res) => res.redirect(301, '/feesten'));
+// /bedrijven gaf 404 sinds de overstap; het was de landingspagina van de
+// zoekadvertenties en staat nog in Google Ads als conversieactie.
+app.get('/bedrijven', (req, res) => res.redirect(301, '/teams'));
+app.get('/vergaderzaal', (req, res) => res.redirect(301, '/teams'));
+app.get('/vergaderzalen', (req, res) => res.redirect(301, '/teams'));
+app.get('/teambuilding', (req, res) => res.redirect(301, '/teams'));
 app.get('/trouwfeest', (req, res) => res.redirect(301, '/feesten#trouwfeest'));
 app.get('/communiefeest', (req, res) => res.redirect(301, '/feesten#familiefeest'));
 
@@ -1581,10 +1587,40 @@ function leesReviewCache() {
   }
 }
 
+// De API-sleutel is bij Google beperkt tot het IPv4-adres van deze server.
+// De server heeft ook IPv6, en fetch kiest zelf. Kiest hij IPv6, dan weigert
+// Google de aanvraag. Daarom deze calls expliciet over IPv4.
+function haalJsonIPv4(url, opties) {
+  const https = require('https');
+  const u = new URL(url);
+  return new Promise((klaar, fout) => {
+    const verzoek = https.request({
+      hostname: u.hostname,
+      path: u.pathname + u.search,
+      method: (opties && opties.method) || 'GET',
+      headers: (opties && opties.headers) || {},
+      family: 4,
+      timeout: 15000
+    }, res => {
+      let body = '';
+      res.on('data', d => { body += d; });
+      res.on('end', () => {
+        let data = {};
+        try { data = JSON.parse(body); } catch (e) { /* niet-JSON antwoord */ }
+        klaar({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, data });
+      });
+    });
+    verzoek.on('timeout', () => verzoek.destroy(new Error('tijd verstreken')));
+    verzoek.on('error', fout);
+    if (opties && opties.body) verzoek.write(opties.body);
+    verzoek.end();
+  });
+}
+
 async function zoekPlaceId() {
   if (process.env.GOOGLE_PLACE_ID) return process.env.GOOGLE_PLACE_ID;
 
-  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+  const res = await haalJsonIPv4('https://places.googleapis.com/v1/places:searchText', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1593,7 +1629,7 @@ async function zoekPlaceId() {
     },
     body: JSON.stringify({ textQuery: 'Domein Walbrugge, Walbrugge 36, 8573 Anzegem' })
   });
-  const data = await res.json();
+  const data = res.data;
   if (!res.ok || !data.places || !data.places.length) {
     throw new Error('plaats niet gevonden: ' + JSON.stringify(data).slice(0, 200));
   }
@@ -1604,7 +1640,7 @@ async function haalGoogleReviews() {
   if (!PLACES_KEY) throw new Error('GOOGLE_PLACES_API_KEY niet ingesteld');
 
   const placeId = await zoekPlaceId();
-  const res = await fetch(
+  const res = await haalJsonIPv4(
     'https://places.googleapis.com/v1/places/' + encodeURIComponent(placeId),
     {
       headers: {
@@ -1613,7 +1649,7 @@ async function haalGoogleReviews() {
       }
     }
   );
-  const data = await res.json();
+  const data = res.data;
   if (!res.ok) throw new Error('Places gaf ' + res.status + ': ' + JSON.stringify(data).slice(0, 200));
 
   const reviews = (data.reviews || [])
