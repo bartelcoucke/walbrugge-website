@@ -850,16 +850,22 @@ function begrensSnelheid({ max, vensterMs, boodschap }) {
     const nu = Date.now();
     const rij = pogingen.get(ip);
 
-    if (!rij || nu - rij.start > vensterMs) {
-      pogingen.set(ip, { start: nu, aantal: 1 });
-      return next();
-    }
-    if (rij.aantal >= max) {
+    // Enkel mislukte pogingen tellen. Wie er ondertussen wél in geraakt,
+    // begint weer met een schone lei: res.wisBegrenzer() doet dat.
+    res.wisBegrenzer = () => pogingen.delete(ip);
+
+    if (rij && nu - rij.start <= vensterMs && rij.aantal >= max) {
       const overSec = Math.ceil((vensterMs - (nu - rij.start)) / 1000);
       res.set('Retry-After', String(overSec));
       return res.status(429).json({ error: boodschap });
     }
-    rij.aantal++;
+
+    res.on('finish', () => {
+      if (res.statusCode < 400) return;           // gelukt: niet meetellen
+      const r = pogingen.get(ip);
+      if (!r || Date.now() - r.start > vensterMs) pogingen.set(ip, { start: Date.now(), aantal: 1 });
+      else r.aantal++;
+    });
     next();
   };
 }
@@ -869,8 +875,14 @@ const contactBegrenzer = begrensSnelheid({
   boodschap: 'Te veel aanvragen na elkaar. Probeer het over een kwartier opnieuw.'
 });
 const loginBegrenzer = begrensSnelheid({
-  max: 10, vensterMs: 15 * 60 * 1000,
-  boodschap: 'Te veel inlogpogingen. Probeer het over een kwartier opnieuw.'
+  max: 20, vensterMs: 15 * 60 * 1000,
+  boodschap: 'Te veel mislukte inlogpogingen. Probeer het over een kwartier opnieuw, of gebruik "Wachtwoord vergeten?".'
+});
+// Aparte teller: anders sluit een reeks foute wachtwoorden ook de enige
+// weg af om een nieuw wachtwoord aan te vragen.
+const herstelBegrenzer = begrensSnelheid({
+  max: 5, vensterMs: 15 * 60 * 1000,
+  boodschap: 'Te veel herstelaanvragen. Probeer het over een kwartier opnieuw.'
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1079,7 +1091,7 @@ app.post('/api/login/2fa', loginBegrenzer, (req, res) => {
 // ── Wachtwoord vergeten ───────────────────────────────────────────────────
 // Stap 1: code aanvragen. Het antwoord is altijd hetzelfde, ook als het adres
 // niet bestaat — anders verklapt de route welke adressen beheerder zijn.
-app.post('/api/login/forgot', loginBegrenzer, (req, res) => {
+app.post('/api/login/forgot', herstelBegrenzer, (req, res) => {
   const email = String((req.body && req.body.email) || '').trim().toLowerCase();
   const altijd = {
     ok: true,
@@ -1111,7 +1123,7 @@ app.post('/api/login/forgot', loginBegrenzer, (req, res) => {
 });
 
 // Stap 2: code plus nieuw wachtwoord.
-app.post('/api/login/reset', loginBegrenzer, (req, res) => {
+app.post('/api/login/reset', herstelBegrenzer, (req, res) => {
   const { challenge, code, password } = req.body || {};
   if (!challenge || !code || !password) {
     return res.status(400).json({ error: 'Vul de code en een nieuw wachtwoord in' });
