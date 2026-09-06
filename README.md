@@ -37,7 +37,8 @@ De server geeft statische bestanden een cache van een jaar (`immutable`). Daarom
 krijgt elke verwijzing naar `/assets/css/*.css` en `/assets/js/*.js` in de
 HTML-pagina's een versieparameter op basis van de bestandsinhoud
 (`style.css?v=9415e3ad`). Verandert het bestand, dan verandert de hash en halen
-browsers het opnieuw op.
+browsers het opnieuw op. De hash negeert regeleinden (CRLF/LF), zodat Windows en
+Linux dezelfde waarde geven.
 
 **Na elke wijziging aan een CSS- of JS-bestand, vóór het committen:**
 

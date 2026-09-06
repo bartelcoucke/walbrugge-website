@@ -28,7 +28,10 @@ function hashOf(assetPath) {
   if (!hashCache.has(assetPath)) {
     const abs = path.join(ROOT, assetPath.replace(/^\//, ''));
     if (!fs.existsSync(abs)) { hashCache.set(assetPath, null); return null; }
-    const h = crypto.createHash('md5').update(fs.readFileSync(abs)).digest('hex').slice(0, 8);
+    // Regeleinden normaliseren: op Windows staat het bestand met CRLF, op de
+    // server met LF. Zo geeft dezelfde inhoud overal dezelfde hash.
+    const inhoud = fs.readFileSync(abs, 'utf8').replace(/\r\n/g, '\n');
+    const h = crypto.createHash('md5').update(inhoud).digest('hex').slice(0, 8);
     hashCache.set(assetPath, h);
   }
   return hashCache.get(assetPath);
