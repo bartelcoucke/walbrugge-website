@@ -326,18 +326,12 @@
  * niets op het toestel bewaard; de server slaat geen IP of user-agent op.
  */
 (function () {
-  var EIGEN = /^(www\.)?walbrugge\.be$|^localhost$|^127\.0\.0\.1$|^2\.28\.71\.249$/;
-  function bronVan(ref) {
-    try {
-      var h = new URL(ref).hostname.toLowerCase();
-      return (h && !EIGEN.test(h) && h !== location.hostname) ? h : '';
-    } catch (e) { return ''; }
-  }
   var q = new URLSearchParams(location.search);
   var basis = {
     pad: location.pathname,
     taal: document.documentElement.lang || 'nl',
-    ref: bronVan(document.referrer),
+    // Ruwe verwijzer; de server herkent er sites, Android-apps en in-app-browsers in.
+    ref: (document.referrer || '').slice(0, 300),
     utm_source: q.get('utm_source') || '',
     utm_medium: q.get('utm_medium') || '',
     utm_campaign: q.get('utm_campaign') || ''
@@ -345,10 +339,10 @@
   function stuur(naam, detail) {
     var body = JSON.stringify(Object.assign({ naam: naam, detail: detail || '' }, basis));
     try {
-      if (navigator.sendBeacon && navigator.sendBeacon('/api/track', new Blob([body], { type: 'application/json' }))) return;
+      if (navigator.sendBeacon && navigator.sendBeacon('/api/telling', new Blob([body], { type: 'application/json' }))) return;
     } catch (e) { /* val terug op fetch */ }
     try {
-      fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true })
+      fetch('/api/telling', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true })
         .catch(function () {});
     } catch (e) { /* stil */ }
   }

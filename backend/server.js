@@ -592,15 +592,63 @@ function statsToestel(req) {
   return /Mobi|Android|iPhone|iPad/i.test(String(req.headers['user-agent'] || '')) ? 'mobiel' : 'desktop';
 }
 
-// Externe herkomst: het domein van de verwijzende site, of null als de
-// bezoeker van de site zelf komt (of er geen verwijzer is).
-function statsBron(ref, eigenHost) {
-  if (!ref) return null;
-  try {
-    const host = new URL(ref).hostname.toLowerCase();
-    if (!host || STATS_EIGEN_HOSTS.has(host) || host === String(eigenHost || '').toLowerCase().split(':')[0]) return null;
-    return host.slice(0, 120);
-  } catch (e) { return null; }
+// Android geeft bij een klik vanuit een app een verwijzer "android-app://<pakket>" mee.
+const STATS_APPS = {
+  'com.whatsapp': 'WhatsApp (app)',
+  'com.whatsapp.w4b': 'WhatsApp Business (app)',
+  'com.google.android.gm': 'Gmail (app)',
+  'com.microsoft.office.outlook': 'Outlook (app)',
+  'com.samsung.android.email.provider': 'Samsung Mail (app)',
+  'com.google.android.apps.messaging': 'Berichten (app)',
+  'com.facebook.katana': 'Facebook (app)',
+  'com.facebook.lite': 'Facebook (app)',
+  'm.facebook.com': 'Facebook (app)',
+  'com.facebook.orca': 'Messenger (app)',
+  'com.instagram.android': 'Instagram (app)',
+  'com.linkedin.android': 'LinkedIn (app)',
+  'org.telegram.messenger': 'Telegram (app)',
+  'com.google.android.googlequicksearchbox': 'Google (app)',
+  'com.pinterest': 'Pinterest (app)',
+  'com.twitter.android': 'X (app)',
+  'com.zhiliaoapp.musically': 'TikTok (app)',
+  'com.snapchat.android': 'Snapchat (app)'
+};
+
+// In-app-browsers (ook op iPhone) zijn te herkennen aan de user-agent.
+function statsInAppBrowser(ua) {
+  const s = String(ua || '');
+  if (!s) return null;
+  if (/MessengerForiOS|FB_IAB\/MESSENGER|\bMessenger\b/i.test(s)) return 'Messenger (app)';
+  if (/FBAN|FBAV|FB_IAB|FBIOS/i.test(s)) return 'Facebook (app)';
+  if (/Instagram/i.test(s)) return 'Instagram (app)';
+  if (/LinkedInApp/i.test(s)) return 'LinkedIn (app)';
+  if (/musical_ly|TikTok|BytedanceWebview/i.test(s)) return 'TikTok (app)';
+  if (/Pinterest/i.test(s)) return 'Pinterest (app)';
+  if (/Snapchat/i.test(s)) return 'Snapchat (app)';
+  if (/Twitter for iPhone|Twitter for Android/i.test(s)) return 'X (app)';
+  if (/\bGSA\/|GoogleApp/i.test(s)) return 'Google (app)';
+  return null;
+}
+
+// Externe herkomst: het domein van de verwijzende site, een app-naam (Android
+// app-verwijzer of in-app-browser), of null als de bezoeker van de site zelf
+// komt of er niets te herkennen valt.
+function statsBron(ref, eigenHost, ua) {
+  const r = String(ref || '').trim();
+  const app = /^android-app:\/\/([^/?#]+)/i.exec(r);
+  if (app) {
+    const pakket = app[1].toLowerCase();
+    return STATS_APPS[pakket] || ('app: ' + pakket.slice(0, 60));
+  }
+  if (r) {
+    try {
+      const host = new URL(r).hostname.toLowerCase();
+      const eigen = !host || STATS_EIGEN_HOSTS.has(host) || host === String(eigenHost || '').toLowerCase().split(':')[0];
+      if (!eigen) return host.slice(0, 120);
+      if (eigen && host) return null; // van de site zelf: geen nieuwe herkomst
+    } catch (e) { /* onbruikbare verwijzer, val terug op de user-agent */ }
+  }
+  return statsInAppBrowser(ua);
 }
 
 function statsTaal(pad) {
@@ -634,7 +682,7 @@ app.use((req, res, next) => {
           && Object.prototype.hasOwnProperty.call(OUDE_URLS, req.route.path)) {
         if (statsIsBot(req)) return;
         statsInsertEvent.run(
-          statsDag(), 'oude_url', statsKort(pad, 200), 'nl', statsBron(req.get('referer'), req.get('host')),
+          statsDag(), 'oude_url', statsKort(pad, 200), 'nl', statsBron(req.get('referer'), req.get('host'), req.headers['user-agent']),
           statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
           statsKort(OUDE_URLS[req.route.path], 120), statsBezoeker(req)
         );
@@ -647,7 +695,7 @@ app.use((req, res, next) => {
       if (/^\/google[0-9a-f]+\.html$/.test(pad)) return; // Search Console-verificatie
       if (statsIsBot(req)) return;
       statsInsertVisit.run(
-        statsDag(), statsKort(pad, 200), statsTaal(pad), statsBron(req.get('referer'), req.get('host')),
+        statsDag(), statsKort(pad, 200), statsTaal(pad), statsBron(req.get('referer'), req.get('host'), req.headers['user-agent']),
         statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
         statsToestel(req), statsBezoeker(req)
       );
@@ -657,7 +705,8 @@ app.use((req, res, next) => {
 });
 
 // Gebeurtenissen vanuit de pagina's (navigator.sendBeacon in app.js).
-app.post('/api/track', (req, res) => {
+// Het pad heet bewust niet "track": adblockers filteren zulke namen.
+app.post('/api/telling', (req, res) => {
   res.status(204).end();
   try {
     if (statsIsBot(req)) return;
@@ -667,7 +716,7 @@ app.post('/api/track', (req, res) => {
     const pad = statsKort(b.pad, 200) || '/';
     statsInsertEvent.run(
       statsDag(), naam, pad, statsTaal(pad),
-      statsBron(b.ref ? 'https://' + String(b.ref).replace(/^https?:\/\//, '') : '', req.get('host')),
+      statsBron(b.ref, req.get('host'), req.headers['user-agent']),
       statsKort(b.utm_source), statsKort(b.utm_medium), statsKort(b.utm_campaign),
       statsKort(b.detail, 120), statsBezoeker(req)
     );
@@ -694,8 +743,9 @@ app.get('/api/admin/bezoekers', authMiddleware('admin'), (req, res) => {
     ORDER BY d.dag DESC`, van, tot, van, tot);
   const bronnen = all(`
     SELECT COALESCE(v.bron, '') AS bron, COUNT(*) AS weergaven,
-      (SELECT COUNT(*) FROM events e WHERE e.naam = 'generate_lead' AND COALESCE(e.bron, '') = COALESCE(v.bron, '') AND e.dag >= ? AND e.dag <= ?) AS leads
-    FROM visits v ${w} GROUP BY COALESCE(v.bron, '') ORDER BY weergaven DESC LIMIT 20`, van, tot, van, tot);
+      (SELECT COUNT(*) FROM events e WHERE e.naam = 'generate_lead' AND COALESCE(e.bron, '') = COALESCE(v.bron, '') AND e.dag >= ? AND e.dag <= ?) AS leads,
+      (SELECT COUNT(*) FROM events e WHERE e.naam = 'booking_click' AND COALESCE(e.bron, '') = COALESCE(v.bron, '') AND e.dag >= ? AND e.dag <= ?) AS boekingen
+    FROM visits v ${w} GROUP BY COALESCE(v.bron, '') ORDER BY weergaven DESC LIMIT 20`, van, tot, van, tot, van, tot);
   const paginas = all(`SELECT pad, COUNT(*) AS aantal FROM visits ${w} GROUP BY pad ORDER BY aantal DESC LIMIT 20`, van, tot);
   const campagnes = all(`
     SELECT utm_source, utm_medium, utm_campaign, COUNT(*) AS weergaven,
