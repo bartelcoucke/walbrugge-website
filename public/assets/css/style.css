@@ -3309,3 +3309,28 @@ a.hero-award-badge:hover {
 .reviews-booking-card .award-card { min-width: 230px; }
 .award-google-logo { height: 30px; width: auto; }
 .award-google-stars { height: 22px; width: auto; }
+/* ── Google-sterren die de echte score volgen ──────────────────────────
+ * Vijf sterren als achtergrond, daarover een gouden laag die precies zo
+ * breed is als de score. Zo toont 4,6 ook echt 4,6 ster.
+ */
+.g-stars {
+  position: relative;
+  display: inline-block;
+  font-size: 0.95em;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.35);
+  vertical-align: middle;
+}
+.g-stars::before { content: "★★★★★"; }
+.g-stars-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  color: #f5b301;
+}
+.g-stars-fill::before { content: "★★★★★"; }
+.g-stars-num { margin-left: 0.4em; font-weight: 600; }

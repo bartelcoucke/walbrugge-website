@@ -290,7 +290,7 @@
  * Eventplanner beheert de eigenaar in het beheerpaneel.
  */
 (function () {
-  var velden = document.querySelectorAll('[data-score]');
+  var velden = document.querySelectorAll('[data-score], [data-score-stars]');
   if (!velden.length) return;
 
   fetch('/api/scores')
@@ -298,8 +298,23 @@
     .then(function (d) {
       if (!d || !d.ok) return;
       velden.forEach(function (el) {
-        var bron = d.scores[el.getAttribute('data-score')];
-        if (bron && bron.score) el.textContent = bron.score;
+        var naam = el.getAttribute('data-score') || el.getAttribute('data-score-stars');
+        var bron = d.scores[naam];
+        if (!bron || !bron.score) return;
+
+        if (el.hasAttribute('data-score-stars')) {
+          // Score kan 4,6 of 4.6 zijn, en soms 9,4 op een schaal van 10.
+          var n = parseFloat(String(bron.score).replace(',', '.'));
+          if (isNaN(n)) return;
+          if (n > 5) n = n / 2;
+          var vul = el.querySelector('.g-stars-fill');
+          if (vul) vul.style.width = Math.max(0, Math.min(100, n / 5 * 100)).toFixed(1) + '%';
+          el.setAttribute('aria-label',
+            n.toFixed(1).replace('.', ',') + ' van 5 op Google' +
+            (bron.aantal ? ', ' + bron.aantal + ' beoordelingen' : ''));
+        } else {
+          el.textContent = bron.score;
+        }
       });
     })
     .catch(function () { /* stil falen: de HTML-waarde blijft staan */ });
