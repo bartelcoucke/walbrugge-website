@@ -51,7 +51,7 @@
 
 <!-- Hero -->
 <section class="hero hero-page hero-short">
-  <div class="hero-bg" style="background-image:url('/assets/img/hero.jpg')"></div>
+  <div class="hero-bg" style="background-image:url('/assets/img/hero.webp')"></div>
   <div class="hero-overlay"></div>
   <div class="hero-content">
     <p class="hero-kicker">Blog</p>
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
         card.innerHTML = `
           <a href="/blog/${post.slug}" class="blog-card-link">
             <div class="blog-card-image">
-              <img src="${post.featured_image || '/assets/img/hero.jpg'}" alt="${post.title}" loading="lazy">
+              <img src="${post.featured_image || '/assets/img/hero.webp'}" alt="${post.title}" loading="lazy">
             </div>
             <div class="blog-card-content">
               ${post.category ? `<span class="blog-card-category">${post.category}</span>` : ''}

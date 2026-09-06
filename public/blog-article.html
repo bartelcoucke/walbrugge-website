@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Render article
     article.innerHTML = `
-      <header class="blog-article-header" style="background-image: url('${post.featured_image || '/assets/img/hero.jpg'}')">
+      <header class="blog-article-header" style="background-image: url('${post.featured_image || '/assets/img/hero.webp'}')">
         <div class="blog-article-header-overlay"></div>
         <div class="blog-article-header-content">
           <div class="container">
@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           <article class="blog-card">
             <a href="/blog/${post.slug}" class="blog-card-link">
               <div class="blog-card-image">
-                <img src="${post.featured_image || '/assets/img/hero.jpg'}" alt="${post.title}" loading="lazy">
+                <img src="${post.featured_image || '/assets/img/hero.webp'}" alt="${post.title}" loading="lazy">
               </div>
               <div class="blog-card-content">
                 <h3>${post.title}</h3>

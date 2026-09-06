@@ -355,7 +355,11 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // Static files
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  maxAge: 0,         // Laat Caddy de caching regelen — voorkomt dubbele Cache-Control headers
+  etag: true,
+  lastModified: true
+}));
 
 // Logging
 app.use((req, res, next) => {
