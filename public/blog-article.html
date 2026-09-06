@@ -115,7 +115,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Update page title and meta
     document.getElementById('pageTitle').textContent = `${post.title} · Blog · domein Walbrugge`;
-    document.getElementById('pageDescription').content = post.excerpt || post.title;
+    const descEl = document.getElementById('pageDescription');
+    if (descEl) descEl.content = post.excerpt || post.title;
     
     // Render article
     article.innerHTML = `
