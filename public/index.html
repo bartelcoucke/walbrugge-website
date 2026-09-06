@@ -8,7 +8,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Feestzaal, B&B & vergaderlocatie in Tiegem · Walbrugge</title>
-<meta name="description" content="Feestzaal voor bruiloften en communies, 5 B&B-kamers en vergaderzalen tot 100 personen. Exclusief afhuurbaar domein op de rand van de Vlaamse Ardennen. Boek uw evenement of verblijf.">
+<meta name="description" content="Feestzaal, 5 B&B-kamers en vergaderzalen tot 100 personen. Exclusief afhuurbaar domein aan de rand van de Vlaamse Ardennen, in Tiegem.">
 <meta name="robots" content="index, follow">
 <meta name="author" content="Domein Walbrugge">
 <link rel="canonical" href="https://walbrugge.be/">
@@ -154,8 +154,20 @@
 <section class="hero" id="top">
   <div class="hero-bg" style="background-image:url('/assets/img/hero.webp')" role="img" aria-label="Luchtfoto van domein Walbrugge">
     <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="/assets/img/hero.webp" aria-hidden="true">
-      <source src="/assets/video/walbrugge_720p.mp4" type="video/mp4">
+      <source data-src="/assets/video/walbrugge_720p.mp4" type="video/mp4">
     </video>
+    <script>
+    /* Op smalle schermen blijft het bij de posterfoto: geen 2,4 MB video
+       over een mobiel netwerk voor een decoratieve achtergrond. */
+    (function () {
+      var v = document.querySelector('.hero-video');
+      if (!v || !window.matchMedia('(min-width: 768px)').matches) return;
+      var s = v.querySelector('source[data-src]');
+      if (!s) return;
+      s.src = s.getAttribute('data-src');
+      v.load();
+    })();
+    </script>
   </div>
   <div class="hero-overlay"></div>
   <div class="hero-content">
