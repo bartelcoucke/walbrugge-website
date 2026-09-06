@@ -933,7 +933,7 @@ app.get('/blog/:slug', (req, res) => {
     publisher: { '@type': 'Organization', name: 'Domein Walbrugge', logo: { '@type': 'ImageObject', url: 'https://walbrugge.be/assets/img/logo.png' } },
     mainEntityOfPage: url
   });
-  const seoBlock = `<title>${title}</title>
+  let seoBlock = `<title>${title}</title>
 <meta name="description" content="${desc}">
 <link rel="canonical" href="${url}">
 <meta property="og:title" content="${title}">
@@ -948,6 +948,34 @@ app.get('/blog/:slug', (req, res) => {
 <meta name="twitter:description" content="${desc}">
 <meta name="twitter:image" content="${img}">
 <script type="application/ld+json">${articleLd}</script>`;
+
+  // Extract FAQ structured data from content (h3 questions after h2 "Veelgestelde vragen")
+  const faqMatch = (post.content || '').split(/veelgestelde\s+vragen/i);
+  if (faqMatch.length > 1) {
+    const faqSection = faqMatch[1];
+    const faqItems = [];
+    const qRegex = /<h3[^>]*>([^<]+)<\/h3>\s*<p>([\s\S]*?)<\/p>/gi;
+    let m;
+    while ((m = qRegex.exec(faqSection)) !== null) {
+      faqItems.push({
+        '@type': 'Question',
+        name: m[1].replace(/<[^>]*>/g, '').trim(),
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: m[2].replace(/<[^>]*>/g, '').trim()
+        }
+      });
+    }
+    if (faqItems.length > 0) {
+      const faqLd = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: faqItems
+      });
+      seoBlock += `\n<script type="application/ld+json">${faqLd}</script>`;
+    }
+  }
+
   // Vervang bestaande <title> en injecteer de rest vóór </head>
   html = html.replace(/<title>[\s\S]*?<\/title>/, '');
   html = html.replace(/<meta name="description"[^>]*>/, '');
