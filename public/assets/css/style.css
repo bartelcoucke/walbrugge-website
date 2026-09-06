@@ -3370,3 +3370,8 @@ a.hero-award-badge:hover {
   line-height: 1.75;
   color: var(--muted);
 }
+
+/* Google-reviews op de homepage: score-regel met sterren, link boven de kaarten */
+.gr-score { margin-bottom: 0.5rem; }
+.gr-stars-inline { display: inline; margin: 0; }
+.gr-alle { margin-bottom: 2rem; }

@@ -815,19 +815,23 @@ function bouwReviewBlok(cache, lang) {
     '</figure>'
   ).join('');
 
+  // Volgorde: score-regel ("Google ★★★★★ · 5,0 / 5 · 40 beoordelingen"),
+  // dan de link naar alle beoordelingen, dan pas de reviewkaarten.
   return (
     '<section class="section" id="google-reviews">' +
       '<div class="container">' +
         '<p class="kicker center">' + t.sub + '</p>' +
         '<h2 class="center">' + t.kop + '</h2>' +
         '<p class="center gr-score">' +
+          'Google <span class="gr-stars gr-stars-inline" aria-label="' + cache.score + ' / 5">' +
+            sterren(cache.score) + '</span> · ' +
           '<strong>' + String(cache.score).replace('.', ',') + '</strong> / 5 · ' +
           cache.aantal + ' ' + (lang === 'fr' ? 'avis' : lang === 'de' ? 'Bewertungen'
                                : lang === 'en' ? 'reviews' : 'beoordelingen') +
         '</p>' +
-        '<div class="gr-grid">' + kaarten + '</div>' +
-        '<p class="center"><a href="' + escHtml(cache.kaartUrl) +
+        '<p class="center gr-alle"><a href="' + escHtml(cache.kaartUrl) +
           '" target="_blank" rel="noopener">' + t.alles + ' ↗</a></p>' +
+        '<div class="gr-grid">' + kaarten + '</div>' +
       '</div>' +
     '</section>'
   );
@@ -875,7 +879,9 @@ function serveerHomepage(lang) {
       html = html.replace(/(<span class="g-stars-fill" style="width:)100%(")/g, '$1' + pct + '%$2');
     }
 
-    const cache = leesReviewCache();
+    // Reviews in de taal van de pagina; is die cache er (nog) niet, dan de
+    // Nederlandse, zodat de sectie niet wegvalt.
+    const cache = leesReviewCache(lang || 'nl') || leesReviewCache('nl');
 
     // Zonder cache blijft de pagina exact zoals ze is.
     if (cache && cache.score && cache.reviews && cache.reviews.length) {
@@ -1867,12 +1873,19 @@ app.get('/de/bb', serveBBPage('de'));
 //   GOOGLE_PLACE_ID=...        (optioneel; wordt anders opgezocht op naam)
 
 const PLACES_KEY = process.env.GOOGLE_PLACES_API_KEY;
-const PLACES_CACHE = path.join(DATA_DIR, 'google-reviews.json');
 const PLACES_MAX_LEEFTIJD = 24 * 60 * 60 * 1000;
 
-function leesReviewCache() {
+// De reviews worden per taal opgehaald (Google vertaalt ze mee), dus ook per
+// taal bewaard. Het Nederlandse bestand houdt zijn oude naam.
+const REVIEW_TALEN = ['nl', 'fr', 'en', 'de'];
+function placesCachePad(lang) {
+  return path.join(DATA_DIR, lang && lang !== 'nl' ? 'google-reviews-' + lang + '.json'
+                                                    : 'google-reviews.json');
+}
+
+function leesReviewCache(lang) {
   try {
-    return JSON.parse(fs.readFileSync(PLACES_CACHE, 'utf-8'));
+    return JSON.parse(fs.readFileSync(placesCachePad(lang || 'nl'), 'utf-8'));
   } catch (e) {
     return null;
   }
@@ -1927,12 +1940,16 @@ async function zoekPlaceId() {
   return data.places[0].id;
 }
 
-async function haalGoogleReviews() {
+async function haalGoogleReviews(lang) {
   if (!PLACES_KEY) throw new Error('GOOGLE_PLACES_API_KEY niet ingesteld');
+  lang = REVIEW_TALEN.includes(lang) ? lang : 'nl';
 
   const placeId = await zoekPlaceId();
+  // languageCode: Google levert de reviewteksten (en "2 maanden geleden")
+  // dan in de gevraagde taal, vertaald waar nodig.
   const res = await haalJsonIPv4(
-    'https://places.googleapis.com/v1/places/' + encodeURIComponent(placeId),
+    'https://places.googleapis.com/v1/places/' + encodeURIComponent(placeId) +
+      '?languageCode=' + lang,
     {
       headers: {
         'X-Goog-Api-Key': PLACES_KEY,
@@ -1963,30 +1980,34 @@ async function haalGoogleReviews() {
     opgehaald: Date.now()
   };
 
-  fs.mkdirSync(path.dirname(PLACES_CACHE), { recursive: true });
-  fs.writeFileSync(PLACES_CACHE, JSON.stringify(bewaard, null, 1));
+  const cachePad = placesCachePad(lang);
+  fs.mkdirSync(path.dirname(cachePad), { recursive: true });
+  fs.writeFileSync(cachePad, JSON.stringify(bewaard, null, 1));
 
-  // De zichtbare score op de site mee bijwerken.
-  if (bewaard.score) {
+  // De zichtbare score op de site mee bijwerken (score en aantal zijn in
+  // elke taal gelijk; één keer volstaat).
+  if (bewaard.score && lang === 'nl') {
     db.prepare(`UPDATE site_scores SET score = ?, aantal = ?, url = ?,
                 bijgewerkt = CURRENT_TIMESTAMP WHERE bron = 'google'`)
       .run(String(bewaard.score).replace('.', ','), bewaard.aantal, bewaard.kaartUrl);
   }
-  console.log('[google] Score ' + bewaard.score + ' uit ' + bewaard.aantal +
+  console.log('[google] ' + lang + ': score ' + bewaard.score + ' uit ' + bewaard.aantal +
               ' beoordelingen, ' + reviews.length + ' reviews bewaard');
   return bewaard;
 }
 
 async function ververGoogleReviews() {
   if (!PLACES_KEY) return;
-  const cache = leesReviewCache();
-  if (cache && Date.now() - cache.opgehaald < PLACES_MAX_LEEFTIJD) return;
-  try {
-    await haalGoogleReviews();
-  } catch (err) {
-    // Bij een fout blijft de vorige cache staan: liever een cijfer van
-    // gisteren dan geen cijfer.
-    console.error('[google] Ophalen mislukt:', err.message);
+  for (const lang of REVIEW_TALEN) {
+    const cache = leesReviewCache(lang);
+    if (cache && Date.now() - cache.opgehaald < PLACES_MAX_LEEFTIJD) continue;
+    try {
+      await haalGoogleReviews(lang);
+    } catch (err) {
+      // Bij een fout blijft de vorige cache staan: liever een cijfer van
+      // gisteren dan geen cijfer.
+      console.error('[google] Ophalen (' + lang + ') mislukt:', err.message);
+    }
   }
 }
 
@@ -2037,7 +2058,8 @@ app.put('/api/admin/scores/:bron', authMiddleware('admin'), (req, res) => {
 });
 
 app.get('/api/reviews', (req, res) => {
-  const cache = leesReviewCache();
+  const lang = REVIEW_TALEN.includes(req.query.lang) ? req.query.lang : 'nl';
+  const cache = leesReviewCache(lang) || leesReviewCache('nl');
   if (!cache) {
     return res.json({ ok: false, reden: PLACES_KEY ? 'nog niet opgehaald' : 'geen API-sleutel' });
   }
