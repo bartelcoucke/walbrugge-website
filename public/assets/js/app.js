@@ -321,9 +321,10 @@
 })();
 
 /* ── Serverside bezoekersstatistiek (zonder cookies) ────────────────────────
- * Stuurt enkele gebeurtenissen naar /api/track: klik op de offerteknop,
- * offerte verstuurd, WhatsApp/Messenger/telefoon/e-mail, Boek B&B. Er wordt
- * niets op het toestel bewaard; de server slaat geen IP of user-agent op.
+ * Stuurt enkele gebeurtenissen naar /api/telling: klik op de offerteknop,
+ * offerte verstuurd, WhatsApp/Messenger/telefoon/e-mail, Boek B&B, klik op
+ * een zaal en bladeren in een fotocarrousel. Er wordt niets op het toestel
+ * bewaard; de server slaat geen IP of user-agent op.
  */
 (function () {
   var q = new URLSearchParams(location.search);
@@ -348,11 +349,42 @@
   }
   var tekst = function (a) { return (a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60); };
 
+  // Fotocarrousels: de pijltjes en bolletjes van de zaaltegels (teams), de
+  // B&B-kamers en de feestpagina. Geeft een vaste sleutel per carrousel, gelijk
+  // in alle talen: zaal:<slug>, kamer:<naam>, feest:<naam>.
+  var CARROUSEL_KNOP = '.zaal-slider-btn, .zaal-slider-dot, .carousel-btn, .carousel-dot, .slider-btn, .slider-dot';
+  function carrouselId(el) {
+    var kamer = el.closest('.room-carousel[data-room]');
+    if (kamer) return 'kamer:' + kamer.getAttribute('data-room');
+    var feest = el.closest('.slider-container[data-slider]');
+    if (feest) return 'feest:' + feest.getAttribute('data-slider');
+    var zaal = el.closest('.zaal-slider');
+    if (zaal) {
+      var link = zaal.closest('a[href]');
+      var m = link ? /\/ruimtes\/([a-z0-9-]+)/i.exec(link.getAttribute('href') || '') : null;
+      if (m) return 'zaal:' + m[1].toLowerCase();
+      // Tegel zonder link (bv. het terras): sleutel uit de bestandsnaam van de eerste foto
+      var img = zaal.querySelector('img');
+      var naam = (img ? img.getAttribute('src') || '' : '').split('/').pop()
+        .replace(/\.[a-z0-9]+$/i, '').replace(/-(c|carrousel-?)?\d+$/i, '').replace(/^(teams|feesten)-/, '');
+      return 'zaal:' + (naam || 'onbekend');
+    }
+    return '';
+  }
+
   document.addEventListener('click', function (ev) {
-    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+    var t = ev.target;
+    if (!t || !t.closest) return;
+    var knop = t.closest(CARROUSEL_KNOP);
+    if (knop) { var id = carrouselId(knop); if (id) stuur('carrousel', id); return; }
+    var a = t.closest('a[href]');
     if (!a) return;
     var href = a.getAttribute('href') || '';
-    if (/^\/(fr\/|en\/|de\/)?offerte(\?|#|$)/.test(href)) stuur('offerte_click', tekst(a));
+    // Klik op een zaal: de zaaltegels op de teamspagina en de zaallinks op de
+    // zaalpagina's zelf (niet de taalkeuze, die verwijst naar dezelfde zaal).
+    var zaal = /^\/(?:fr\/|en\/|de\/)?ruimtes\/([a-z0-9-]+)/i.exec(href);
+    if (zaal && !a.closest('.lang-switch')) stuur('zaal_click', zaal[1].toLowerCase());
+    else if (/^\/(fr\/|en\/|de\/)?offerte(\?|#|$)/.test(href)) stuur('offerte_click', tekst(a));
     else if (href.indexOf('wa.me/') !== -1 || href.indexOf('whatsapp.com') !== -1) stuur('whatsapp_click');
     else if (href.indexOf('m.me/') !== -1 || href.indexOf('messenger.com') !== -1) stuur('messenger_click');
     else if (href.indexOf('bookingengine.mylighthouse.com') !== -1) stuur('booking_click', tekst(a));

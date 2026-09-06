@@ -567,7 +567,7 @@ try {
 
 const STATS_EIGEN_HOSTS = new Set(['walbrugge.be', 'www.walbrugge.be', '2.28.71.249', 'localhost', '127.0.0.1']);
 const STATS_BOT = /bot|crawl|spider|slurp|preview|monitor|fetch|scan|curl|wget|python|java\/|headless|lighthouse|pingdom|uptime|facebookexternalhit|whatsapp|telegrambot|linkedinbot|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|ccbot/i;
-const STATS_EVENTS = new Set(['offerte_click', 'generate_lead', 'whatsapp_click', 'messenger_click', 'phone_click', 'email_click', 'booking_click']);
+const STATS_EVENTS = new Set(['offerte_click', 'generate_lead', 'whatsapp_click', 'messenger_click', 'phone_click', 'email_click', 'booking_click', 'zaal_click', 'carrousel']);
 
 function statsDag() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Brussels' });
@@ -758,7 +758,39 @@ app.get('/api/admin/bezoekers', authMiddleware('admin'), (req, res) => {
     SELECT naam, COALESCE(detail, '') AS detail, COALESCE(pad, '') AS pad, COUNT(*) AS aantal
     FROM events ${w} GROUP BY naam, detail, pad ORDER BY aantal DESC LIMIT 40`, van, tot);
 
-  res.json({ ok: true, periode: { van, tot, dagen }, totaal, events, perDag, bronnen, paginas, campagnes, talen, toestellen, eventsDetail });
+  // Zalen: klikken op een zaaltegel of -link (event zaal_click, detail = slug),
+  // weergaven van de zaalpagina (/ruimtes/<slug>, in elke taal) en klikken in
+  // de fotocarrousel van die zaal (event carrousel, detail = 'zaal:<slug>').
+  const zalenMap = new Map();
+  const zaalRij = z => { if (!zalenMap.has(z)) zalenMap.set(z, { zaal: z, klikken: 0, weergaven: 0, carrousel: 0 }); return zalenMap.get(z); };
+  all(`SELECT detail AS zaal, COUNT(*) AS n FROM events ${w} AND naam = 'zaal_click' AND detail != '' GROUP BY detail`, van, tot)
+    .forEach(r => { zaalRij(r.zaal).klikken = r.n; });
+  all(`SELECT rtrim(substr(pad, instr(pad, '/ruimtes/') + 9), '/') AS zaal, COUNT(*) AS n
+       FROM visits ${w} AND instr(pad, '/ruimtes/') > 0 GROUP BY zaal`, van, tot)
+    .forEach(r => { if (r.zaal) zaalRij(r.zaal).weergaven = r.n; });
+  all(`SELECT substr(detail, 6) AS zaal, COUNT(*) AS n FROM events ${w} AND naam = 'carrousel' AND detail LIKE 'zaal:%' GROUP BY detail`, van, tot)
+    .forEach(r => { zaalRij(r.zaal).carrousel = r.n; });
+  const zalen = [...zalenMap.values()].sort((a, b) => b.klikken - a.klikken || b.weergaven - a.weergaven);
+
+  // Fotocarrousels: klikken op pijltjes/bolletjes per carrousel, plus hoeveel
+  // bezoekers dat deden, afgezet tegen alle bezoekers van de pagina waar de
+  // carrousel staat (zaal → /teams, kamer → /bb, feest → /feesten).
+  const CARROUSEL_PAGINA = { zaal: 'teams', kamer: 'bb', feest: 'feesten' };
+  const paginaStats = {};
+  for (const [type, pagina] of Object.entries(CARROUSEL_PAGINA)) {
+    paginaStats[type] = get(`SELECT COUNT(*) AS weergaven, COUNT(DISTINCT bezoeker || dag) AS bezoekers
+                             FROM visits ${w} AND (pad = ? OR pad LIKE ?)`, van, tot, '/' + pagina, '/__/' + pagina);
+  }
+  const carrousels = all(`SELECT detail, COUNT(*) AS klikken, COUNT(DISTINCT bezoeker || dag) AS bezoekers
+                          FROM events ${w} AND naam = 'carrousel' GROUP BY detail ORDER BY klikken DESC LIMIT 40`, van, tot)
+    .map(c => {
+      const type = String(c.detail).split(':')[0];
+      const p = paginaStats[type] || {};
+      return { detail: c.detail, type, pagina: CARROUSEL_PAGINA[type] ? '/' + CARROUSEL_PAGINA[type] : '',
+               klikken: c.klikken, bezoekers: c.bezoekers, paginaWeergaven: p.weergaven || 0, paginaBezoekers: p.bezoekers || 0 };
+    });
+
+  res.json({ ok: true, periode: { van, tot, dagen }, totaal, events, perDag, bronnen, paginas, campagnes, talen, toestellen, eventsDetail, zalen, carrousels });
 });
 
 

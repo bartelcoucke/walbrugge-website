@@ -318,6 +318,32 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
         </div>
 
         <div class="card">
+          <div class="card-header"><h2>Zalen</h2></div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            Welke zalen bezoekers aanklikken: de zaaltegels op de teamspagina en de zaallinks op
+            de zaalpagina's. Daarnaast hoe vaak de zaalpagina zelf bekeken werd en hoe vaak er in
+            de fotocarrousel van die zaal gebladerd werd.
+          </p>
+          <table>
+            <thead><tr><th>Zaal</th><th style="text-align:right;">Klikken naar zaalpagina</th><th style="text-align:right;">Weergaven zaalpagina</th><th style="text-align:right;">Carrouselklikken</th></tr></thead>
+            <tbody id="bzZalen"><tr><td colspan="4" class="empty">Laden…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Fotocarrousels</h2></div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            Elke klik op een pijltje of bolletje van een carrousel. "Bezoekers" is het aantal
+            bezoekers dat minstens één keer bladerde; "Aandeel" zet dat af tegen alle bezoekers
+            van de pagina waar de carrousel staat.
+          </p>
+          <table>
+            <thead><tr><th>Carrousel</th><th>Pagina</th><th style="text-align:right;">Klikken</th><th style="text-align:right;">Bezoekers</th><th style="text-align:right;">Aandeel</th></tr></thead>
+            <tbody id="bzCarrousels"><tr><td colspan="5" class="empty">Laden…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
           <div class="card-header"><h2>Campagnes (UTM-links)</h2></div>
           <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
             Gebruik in eigen berichten en advertenties links als
@@ -650,9 +676,31 @@ const EVENT_NAAM = {
   messenger_click: 'Klik op Messenger',
   phone_click: 'Klik op telefoonnummer',
   email_click: 'Klik op e-mailadres',
+  zaal_click: 'Klik op een zaal (naar de zaalpagina)',
+  carrousel: 'Bladeren in een fotocarrousel',
   oude_url: 'Binnengekomen via een oude WordPress-URL'
 };
 const TAAL_NAAM = { nl: 'Nederlands', fr: 'Frans', en: 'Engels', de: 'Duits' };
+const ZAAL_NAAM = {
+  'polyvalente-zaal': 'Polyvalente zaal', vergaderzaal: 'Vergader- & opleidingszaal',
+  'panoramische-zaal': 'Panoramische boardroom', zolderzalen: 'Zolderzalen', pianobar: 'Pianobar',
+  terras: 'Terras & buitenruimte'
+};
+const KAMER_NAAM = { campanula: 'Campanula', 'chicory-ast': 'Chicory Ast', 'cornus-mas': 'Cornus Mas', eucalyptus: 'Eucalyptus', kardoen: 'Kardoen' };
+const FEEST_NAAM = { trouw: 'Huwelijksfeest', familie: 'Communie · lentefeest · verjaardag', koffietafel: 'Koffietafel' };
+// Naam van een carrousel (zaal:<slug>, kamer:<naam>, feest:<naam>) voor in de tabellen
+function carrouselNaam(id) {
+  const [type, sleutel] = String(id || '').split(':');
+  if (type === 'zaal') return 'Zaal: ' + (ZAAL_NAAM[sleutel] || sleutel);
+  if (type === 'kamer') return 'B&B-kamer: ' + (KAMER_NAAM[sleutel] || sleutel);
+  if (type === 'feest') return 'Feesten: ' + (FEEST_NAAM[sleutel] || sleutel);
+  return id || '–';
+}
+function detailNaam(e) {
+  if (e.naam === 'carrousel') return carrouselNaam(e.detail);
+  if (e.naam === 'zaal_click') return ZAAL_NAAM[e.detail] || e.detail || '–';
+  return e.detail || '–';
+}
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nb = n => new Intl.NumberFormat('nl-BE').format(n || 0);
 
@@ -678,6 +726,20 @@ async function loadBezoekers() {
         <td style="text-align:right;">${b.boekingen ? '<strong>' + nb(b.boekingen) + '</strong>' : '–'}</td></tr>`).join('')
     : leeg(4, 'Nog geen bezoeken in deze periode');
 
+  document.getElementById('bzZalen').innerHTML = (data.zalen || []).length ? data.zalen.map(z => `
+    <tr><td>${esc(ZAAL_NAAM[z.zaal] || z.zaal)}</td>
+        <td style="text-align:right;">${z.klikken ? '<strong>' + nb(z.klikken) + '</strong>' : '–'}</td>
+        <td style="text-align:right;">${z.weergaven ? nb(z.weergaven) : '–'}</td>
+        <td style="text-align:right;">${z.carrousel ? nb(z.carrousel) : '–'}</td></tr>`).join('')
+    : leeg(4, 'Nog geen klikken op zalen in deze periode');
+
+  document.getElementById('bzCarrousels').innerHTML = (data.carrousels || []).length ? data.carrousels.map(c => `
+    <tr><td>${esc(carrouselNaam(c.detail))}</td><td>${esc(c.pagina || '–')}</td>
+        <td style="text-align:right;">${nb(c.klikken)}</td>
+        <td style="text-align:right;">${nb(c.bezoekers)}</td>
+        <td style="text-align:right;">${c.paginaBezoekers ? Math.round(c.bezoekers / c.paginaBezoekers * 100) + ' %' : '–'}</td></tr>`).join('')
+    : leeg(5, 'Nog geen carrouselklikken in deze periode');
+
   document.getElementById('bzCampagnes').innerHTML = data.campagnes.length ? data.campagnes.map(c => `
     <tr><td>${esc(c.utm_source || '–')}</td><td>${esc(c.utm_medium || '–')}</td><td>${esc(c.utm_campaign || '–')}</td>
         <td style="text-align:right;">${nb(c.weergaven)}</td>
@@ -689,7 +751,7 @@ async function loadBezoekers() {
     : leeg(2, 'Nog geen gebeurtenissen in deze periode');
 
   document.getElementById('bzEventsDetail').innerHTML = data.eventsDetail.map(e => `
-    <tr><td>${esc(EVENT_NAAM[e.naam] || e.naam)}</td><td>${esc(e.detail || '–')}</td><td>${esc(e.pad)}</td>
+    <tr><td>${esc(EVENT_NAAM[e.naam] || e.naam)}</td><td>${esc(detailNaam(e))}</td><td>${esc(e.pad)}</td>
         <td style="text-align:right;">${nb(e.aantal)}</td></tr>`).join('');
 
   document.getElementById('bzPaginas').innerHTML = data.paginas.length ? data.paginas.map(p => `
