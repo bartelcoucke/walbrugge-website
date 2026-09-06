@@ -1,0 +1,4 @@
+Contact: mailto:info@walbrugge.be
+Expires: 2027-09-06T00:00:00.000Z
+Preferred-Languages: nl, en, fr, de
+Canonical: https://walbrugge.be/.well-known/security.txt

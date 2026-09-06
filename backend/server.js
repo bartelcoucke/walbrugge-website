@@ -495,6 +495,11 @@ if (roomCount === 0) {
 }
 
 // Middleware
+// Caddy staat ervoor en is de enige die de app rechtstreeks bereikt. Zonder
+// deze regel is req.ip altijd 127.0.0.1 en zou de snelheidsbegrenzing alle
+// bezoekers als één persoon tellen.
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -516,12 +521,33 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // Static files
+// Eén URL per pagina. /teams/ en /index.html gaven eerder gewoon 200 met
+// dezelfde inhoud als de canonieke URL; dat is duplicate content. Deze
+// middleware moet vóór express.static staan.
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+
+  const [pad, ...rest] = req.originalUrl.split('?');
+  const query = rest.length ? '?' + rest.join('?') : '';
+
+  if (pad.endsWith('/index.html')) {
+    return res.redirect(301, (pad.slice(0, -'/index.html'.length) || '/') + query);
+  }
+  if (pad.length > 1 && pad.endsWith('/')) {
+    return res.redirect(301, pad.slice(0, -1) + query);
+  }
+  next();
+});
+
 // Caddy zet de caching-headers. express.static mag er zelf geen sturen:
 // removeHeader in setHeaders werkte niet, omdat express de header pas ná die
 // callback zet — en dan juist wél, omdat er dan geen header meer staat.
 // Met cacheControl: false zwijgt express en blijft er één header over.
+// redirect: false — anders vangt express.static de map /fr en stuurt hij naar
+// /fr/, terwijl de sitemap en de canonical /fr gebruiken.
 app.use(express.static(path.join(__dirname, '..', 'public'), {
   cacheControl: false,
+  redirect: false,
   etag: true,
   lastModified: true
 }));
@@ -644,6 +670,52 @@ async function stuurInlogcode(naarAdres, code) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SNELHEIDSBEGRENZING
+// ═══════════════════════════════════════════════════════════════════════════
+// Zonder externe pakketten: een venster per IP in het geheugen. Genoeg om
+// een formulier of een inlogpagina te beschermen tegen geautomatiseerd
+// afvuren; bij een herstart begint de teller opnieuw, wat hier volstaat.
+
+function begrensSnelheid({ max, vensterMs, boodschap }) {
+  const pogingen = new Map();
+
+  // Voorkomt dat de map onbeperkt groeit.
+  setInterval(() => {
+    const nu = Date.now();
+    for (const [sleutel, rij] of pogingen) {
+      if (nu - rij.start > vensterMs) pogingen.delete(sleutel);
+    }
+  }, vensterMs).unref();
+
+  return (req, res, next) => {
+    const ip = req.ip || req.socket.remoteAddress || 'onbekend';
+    const nu = Date.now();
+    const rij = pogingen.get(ip);
+
+    if (!rij || nu - rij.start > vensterMs) {
+      pogingen.set(ip, { start: nu, aantal: 1 });
+      return next();
+    }
+    if (rij.aantal >= max) {
+      const overSec = Math.ceil((vensterMs - (nu - rij.start)) / 1000);
+      res.set('Retry-After', String(overSec));
+      return res.status(429).json({ error: boodschap });
+    }
+    rij.aantal++;
+    next();
+  };
+}
+
+const contactBegrenzer = begrensSnelheid({
+  max: 5, vensterMs: 15 * 60 * 1000,
+  boodschap: 'Te veel aanvragen na elkaar. Probeer het over een kwartier opnieuw.'
+});
+const loginBegrenzer = begrensSnelheid({
+  max: 10, vensterMs: 15 * 60 * 1000,
+  boodschap: 'Te veel inlogpogingen. Probeer het over een kwartier opnieuw.'
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // AUTH MIDDLEWARE
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -675,7 +747,7 @@ function authMiddleware(requiredRole = null) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Unified login (auto-detect guest vs admin)
-app.post('/api/login', (req, res) => {
+app.post('/api/login', loginBegrenzer, (req, res) => {
   const { email, password, reference } = req.body;
   
   // Guest login: email + booking reference
@@ -803,7 +875,7 @@ function maskeerAdres(adres) {
 }
 
 // Tweede stap: challenge + code inwisselen voor een token.
-app.post('/api/login/2fa', (req, res) => {
+app.post('/api/login/2fa', loginBegrenzer, (req, res) => {
   const { challenge, code, remember } = req.body || {};
 
   if (!challenge || !code) {
@@ -849,7 +921,7 @@ app.post('/api/login/2fa', (req, res) => {
 // ── Wachtwoord vergeten ───────────────────────────────────────────────────
 // Stap 1: code aanvragen. Het antwoord is altijd hetzelfde, ook als het adres
 // niet bestaat — anders verklapt de route welke adressen beheerder zijn.
-app.post('/api/login/forgot', (req, res) => {
+app.post('/api/login/forgot', loginBegrenzer, (req, res) => {
   const email = String((req.body && req.body.email) || '').trim().toLowerCase();
   const altijd = {
     ok: true,
@@ -881,7 +953,7 @@ app.post('/api/login/forgot', (req, res) => {
 });
 
 // Stap 2: code plus nieuw wachtwoord.
-app.post('/api/login/reset', (req, res) => {
+app.post('/api/login/reset', loginBegrenzer, (req, res) => {
   const { challenge, code, password } = req.body || {};
   if (!challenge || !code || !password) {
     return res.status(400).json({ error: 'Vul de code en een nieuw wachtwoord in' });
@@ -998,7 +1070,7 @@ app.get('/api/me', authMiddleware(), (req, res) => {
 // CONTACT / OFFERTE ROUTES
 // ═══════════════════════════════════════════════════════════════════════════
 
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', contactBegrenzer, (req, res) => {
   const { naam, email, telefoon, bedrijf, type, personen, datum, formule, bericht, website } = req.body;
   
   // Honeypot check
@@ -1359,6 +1431,14 @@ app.get('/bb', serveBBPage(null));
 app.get('/fr/bb', serveBBPage('fr'));
 app.get('/en/bb', serveBBPage('en'));
 app.get('/de/bb', serveBBPage('de'));
+
+// security.txt — RFC 9116. express.static laat bestanden met een punt vooraan
+// links liggen, dus een eigen route.
+app.get(['/.well-known/security.txt', '/security.txt'], (req, res) => {
+  const file = path.join(__dirname, '..', 'public', '.well-known', 'security.txt');
+  if (!fs.existsSync(file)) return res.status(404).end();
+  res.type('text/plain').sendFile(file);
+});
 
 // llms.txt — plain text voor AI-bots
 app.get('/llms.txt', (req, res) => {
