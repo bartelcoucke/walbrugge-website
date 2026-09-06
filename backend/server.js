@@ -644,6 +644,7 @@ app.use((req, res, next) => {
       if (res.statusCode !== 200) return;
       if (!String(res.getHeader('content-type') || '').includes('text/html')) return;
       if (/^\/(api|admin|gasten|login)(\/|$)/.test(pad) || /^\/(fr|en|de)\/login$/.test(pad)) return;
+      if (/^\/google[0-9a-f]+\.html$/.test(pad)) return; // Search Console-verificatie
       if (statsIsBot(req)) return;
       statsInsertVisit.run(
         statsDag(), statsKort(pad, 200), statsTaal(pad), statsBron(req.get('referer'), req.get('host')),
