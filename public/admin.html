@@ -92,6 +92,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
       <a href="#" data-section="contacts">💬 Aanvragen</a>
       <a href="#" data-section="rooms">🛏️ Kamers</a>
       <a href="#" data-section="blog">✍️ Blog</a>
+      <a href="#" data-section="devices">🔐 Toestellen</a>
     </nav>
     <div class="sidebar-footer">
       <a href="https://analytics.google.com/analytics/web/#/a406916498p552781549/reports/intelligenthome" target="_blank" rel="noopener noreferrer" style="color:inherit;display:block;margin-bottom:8px;">📈 Google Analytics</a>
@@ -218,6 +219,31 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
         </div>
       </section>
       
+      <!-- Vertrouwde toestellen -->
+      <section id="section-devices" class="section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Vertrouwde toestellen</h2>
+          </div>
+          <p style="margin:0 0 16px;color:#666;font-size:0.9rem;">
+            Op deze toestellen wordt bij het inloggen geen code meer gevraagd.
+            Trek een toestel in zodra u het niet meer gebruikt of kwijt bent.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Toestel</th>
+                <th>Bevestigd op</th>
+                <th>Laatst gebruikt</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="devicesList">
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <!-- Blog Section -->
       <section id="section-blog" class="section" style="display:none;">
         <div class="card">
@@ -456,6 +482,37 @@ async function loadRooms() {
   }
 }
 
+async function loadDevices() {
+  const data = await api('/admin/devices');
+  const tbody = document.getElementById('devicesList');
+
+  if (data.ok && data.devices.length) {
+    const datum = w => w ? new Date(w.replace(' ', 'T') + 'Z').toLocaleString('nl-BE') : '—';
+    tbody.innerHTML = data.devices.map(d => `
+      <tr>
+        <td><strong>${d.label || 'Onbekend toestel'}</strong></td>
+        <td>${datum(d.created_at)}</td>
+        <td>${datum(d.last_used_at)}</td>
+        <td style="text-align:right;">
+          <button onclick="revokeDevice(${d.id})"
+            style="padding:6px 12px;border:1px solid #d9534f;background:#fff;color:#d9534f;border-radius:6px;cursor:pointer;font-size:0.85rem;">
+            Intrekken
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } else {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Nog geen toestellen bevestigd</td></tr>';
+  }
+}
+
+async function revokeDevice(id) {
+  if (!confirm('Dit toestel intrekken? Bij de volgende login wordt daar opnieuw een code gevraagd.')) return;
+  const data = await api('/admin/devices/' + id, { method: 'DELETE' });
+  if (data.ok) await loadDevices();
+  else alert(data.error || 'Intrekken mislukt');
+}
+
 async function updateRoomPrice(id, price, el) {
   const data = await api('/rooms/' + id, {
     method: 'PUT',
@@ -489,6 +546,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (section === 'contacts') await loadContacts();
     if (section === 'rooms') await loadRooms();
     if (section === 'blog') await loadBlog();
+    if (section === 'devices') await loadDevices();
   });
 });
 

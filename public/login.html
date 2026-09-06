@@ -63,6 +63,29 @@
       <button type="submit" class="btn btn-green btn-lg btn-full">Inloggen</button>
       <div id="adminMsg" class="login-msg" style="display:none;"></div>
     </form>
+
+    <!-- Tweede stap: code uit de mailbox -->
+    <form id="twofaForm" class="login-form">
+      <p style="margin:0 0 16px;color:#555;font-size:0.92rem;">
+        We stuurden een code van 6 cijfers naar <strong id="twofaHint"></strong>.
+        De code blijft 10 minuten geldig.
+      </p>
+      <div class="form-group">
+        <label for="twofaCode">Inlogcode</label>
+        <input type="text" id="twofaCode" name="code" required
+               inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code"
+               placeholder="123456" style="letter-spacing:4px;font-size:1.2rem;">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:0.9rem;color:#555;">
+        <input type="checkbox" id="twofaRemember" checked>
+        Dit toestel onthouden
+      </label>
+      <button type="submit" class="btn btn-green btn-lg btn-full">Bevestigen</button>
+      <div id="twofaMsg" class="login-msg" style="display:none;"></div>
+      <p style="margin:16px 0 0;text-align:center;">
+        <a href="#" id="twofaTerug" style="color:#777;font-size:0.85rem;">← Opnieuw beginnen</a>
+      </p>
+    </form>
     
     <div class="login-footer">
       <a href="/">← Terug naar de website</a>
@@ -139,16 +162,78 @@ document.getElementById('adminForm').addEventListener('submit', async (e) => {
     const res = await fetch('/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, deviceToken: localStorage.getItem('wb_device') })
     });
     const data = await res.json();
-    
-    if (data.ok && data.token) {
-      sessionStorage.setItem('wb_token', data.token);
-      sessionStorage.setItem('wb_user', JSON.stringify(data.user));
-      window.location.href = data.redirect || '/admin';
+
+    if (data.ok && data.twofa) {
+      toonTweedeStap(data.challenge, data.hint);
+    } else if (data.ok && data.token) {
+      bewaarSessie(data);
     } else {
       msg.textContent = data.error || 'Inloggen mislukt';
+      msg.className = 'login-msg error';
+      msg.style.display = 'block';
+    }
+  } catch (e) {
+    msg.textContent = 'Verbindingsfout. Probeer opnieuw.';
+    msg.className = 'login-msg error';
+    msg.style.display = 'block';
+  }
+});
+
+// ── Tweestapsverificatie ──────────────────────────────────────────────────
+let twofaChallenge = null;
+
+function bewaarSessie(data) {
+  sessionStorage.setItem('wb_token', data.token);
+  sessionStorage.setItem('wb_user', JSON.stringify(data.user));
+  // Het toestelgeheim moet een herstart overleven, dus localStorage.
+  if (data.deviceToken) localStorage.setItem('wb_device', data.deviceToken);
+  window.location.href = data.redirect || '/admin';
+}
+
+function toonTweedeStap(challenge, hint) {
+  twofaChallenge = challenge;
+  document.getElementById('twofaHint').textContent = hint || 'uw mailbox';
+  document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('twofaForm').classList.add('active');
+  document.querySelector('.login-tabs').style.display = 'none';
+  document.getElementById('twofaCode').focus();
+}
+
+document.getElementById('twofaTerug').addEventListener('click', (e) => {
+  e.preventDefault();
+  twofaChallenge = null;
+  document.querySelector('.login-tabs').style.display = '';
+  document.querySelectorAll('.login-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('adminForm').classList.add('active');
+  document.getElementById('adminPass').value = '';
+  document.getElementById('twofaCode').value = '';
+  document.getElementById('twofaMsg').style.display = 'none';
+});
+
+document.getElementById('twofaForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('twofaMsg');
+  msg.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/login/2fa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        challenge: twofaChallenge,
+        code: document.getElementById('twofaCode').value,
+        remember: document.getElementById('twofaRemember').checked
+      })
+    });
+    const data = await res.json();
+
+    if (data.ok && data.token) {
+      bewaarSessie(data);
+    } else {
+      msg.textContent = data.error || 'Code klopt niet';
       msg.className = 'login-msg error';
       msg.style.display = 'block';
     }

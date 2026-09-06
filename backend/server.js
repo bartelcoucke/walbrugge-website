@@ -63,14 +63,14 @@ async function graphAccessToken() {
   return graphToken;
 }
 
-async function graphSendMail({ subject, text, html, replyToAdres, replyToNaam }) {
+async function graphSendMail({ subject, text, html, replyToAdres, replyToNaam, naar }) {
   const token = await graphAccessToken();
 
   const bericht = {
     message: {
       subject,
       body: { contentType: 'HTML', content: html },
-      toRecipients: [{ emailAddress: { address: MAIL_TO } }]
+      toRecipients: [{ emailAddress: { address: naar || MAIL_TO } }]
     },
     saveToSentItems: false
   };
@@ -301,6 +301,28 @@ db.exec(`
     slug TEXT UNIQUE NOT NULL,
     description TEXT
   );
+
+  -- Tweestapsverificatie: toestellen die de beheerder al bevestigd heeft.
+  -- We bewaren enkel een hash van het toestelgeheim, nooit het geheim zelf.
+  CREATE TABLE IF NOT EXISTS trusted_devices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token_hash TEXT UNIQUE NOT NULL,
+    label TEXT,
+    user_agent TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_used_at DATETIME
+  );
+
+  -- Openstaande inlogcodes. Kortstondig: opgeruimd na gebruik of verval.
+  CREATE TABLE IF NOT EXISTS login_codes (
+    challenge TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    code_hash TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    attempts INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Insert admin user if not exists
@@ -368,6 +390,98 @@ app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
   next();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TWEESTAPSVERIFICATIE (2FA) VOOR BEHEERDERS
+// ═══════════════════════════════════════════════════════════════════════════
+// Beheerders krijgen na e-mail + wachtwoord een code van 6 cijfers per mail.
+// Bevestigt de beheerder het toestel, dan krijgt dat toestel een geheim dat
+// hier gehasht bewaard wordt; bij een volgende login vervalt de codestap.
+// Het adres voor de code is standaard dat van de gebruiker zelf; met
+// ADMIN_2FA_EMAIL in /etc/walbrugge.env kan een ander postvak gekozen worden.
+
+const CODE_GELDIG_MS = 10 * 60 * 1000;   // code vervalt na 10 minuten
+const CODE_MAX_POGINGEN = 5;             // daarna is de code verbrand
+
+function sha256(waarde) {
+  return crypto.createHash('sha256').update(String(waarde)).digest('hex');
+}
+
+// Vergelijking in constante tijd, zodat de duur van het antwoord niets prijsgeeft.
+function hashesGelijk(a, b) {
+  const bufA = Buffer.from(String(a), 'utf8');
+  const bufB = Buffer.from(String(b), 'utf8');
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function ruimVervallenCodesOp() {
+  db.prepare('DELETE FROM login_codes WHERE expires_at < ?').run(Date.now());
+}
+
+// Geeft het toestel terug als het geheim klopt, anders null.
+function zoekVertrouwdToestel(userId, deviceToken) {
+  if (!deviceToken || typeof deviceToken !== 'string') return null;
+  return db.prepare('SELECT * FROM trusted_devices WHERE user_id = ? AND token_hash = ?')
+    .get(userId, sha256(deviceToken)) || null;
+}
+
+// Maakt een nieuw toestelgeheim aan. De onversleutelde waarde gaat één keer
+// naar de browser; wij houden enkel de hash bij.
+function onthoudToestel(userId, userAgent) {
+  const geheim = crypto.randomBytes(32).toString('hex');
+  db.prepare(`INSERT INTO trusted_devices (user_id, token_hash, label, user_agent, last_used_at)
+              VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`)
+    .run(userId, sha256(geheim), toestelLabel(userAgent), (userAgent || '').slice(0, 255));
+  return geheim;
+}
+
+// Korte, herkenbare omschrijving zodat de beheerder zijn toestellen uit elkaar houdt.
+function toestelLabel(userAgent) {
+  const ua = userAgent || '';
+  const systeem = /Windows/i.test(ua) ? 'Windows'
+    : /iPhone|iPad|iOS/i.test(ua) ? 'iPhone/iPad'
+    : /Android/i.test(ua) ? 'Android'
+    : /Mac OS X|Macintosh/i.test(ua) ? 'Mac'
+    : /Linux/i.test(ua) ? 'Linux' : 'Onbekend toestel';
+  const browser = /Edg\//i.test(ua) ? 'Edge'
+    : /OPR\//i.test(ua) ? 'Opera'
+    : /Chrome\//i.test(ua) ? 'Chrome'
+    : /Safari\//i.test(ua) ? 'Safari'
+    : /Firefox\//i.test(ua) ? 'Firefox' : 'browser';
+  return systeem + ' · ' + browser;
+}
+
+async function stuurInlogcode(naarAdres, code) {
+  const onderwerp = 'Inlogcode Walbrugge: ' + code;
+  const tekst = 'Uw inlogcode voor het beheer van walbrugge.be is ' + code + '.\n' +
+                'De code blijft 10 minuten geldig.\n\n' +
+                'Hebt u zelf niet proberen in te loggen, wijzig dan uw wachtwoord.';
+  const html =
+    '<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;">' +
+    '<h2 style="margin:0 0 4px;font-size:18px;">Inlogcode beheer</h2>' +
+    '<p style="margin:0 0 16px;color:#777;">walbrugge.be</p>' +
+    '<p style="font-size:30px;letter-spacing:6px;font-weight:bold;margin:0 0 12px;">' + code + '</p>' +
+    '<p style="margin:0 0 16px;">De code blijft 10 minuten geldig.</p>' +
+    '<p style="color:#777;font-size:12px;">Hebt u zelf niet proberen in te loggen, ' +
+    'wijzig dan meteen uw wachtwoord.</p></div>';
+
+  if (graphActief) {
+    await graphSendMail({ subject: onderwerp, text: tekst, html, naar: naarAdres });
+    return 'Graph';
+  }
+  if (mailer) {
+    await mailer.sendMail({
+      from: '"Domein Walbrugge" <' + MAIL_FROM + '>',
+      to: naarAdres,
+      subject: onderwerp,
+      text: tekst,
+      html
+    });
+    return 'SMTP';
+  }
+  throw new Error('geen mailweg ingesteld');
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AUTH MIDDLEWARE
@@ -447,35 +561,146 @@ app.post('/api/login', (req, res) => {
   // Admin login: email + password
   if (email && password) {
     const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
-    
+
     if (!user || !user.password_hash) {
       return res.status(401).json({ error: 'Ongeldige inloggegevens' });
     }
-    
+
     if (!bcrypt.compareSync(password, user.password_hash)) {
       return res.status(401).json({ error: 'Ongeldige inloggegevens' });
     }
-    
-    const token = jwt.sign({
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      name: user.name
-    }, JWT_SECRET, { expiresIn: '24h' });
-    
-    return res.json({
-      ok: true,
-      token,
-      user: {
-        email: user.email,
-        name: user.name,
-        role: user.role
-      },
-      redirect: user.role === 'admin' ? '/admin' : '/gasten/dashboard'
+
+    // Beheerders doorlopen een tweede stap, tenzij dit toestel al bevestigd is.
+    if (user.role === 'admin') {
+      const toestel = zoekVertrouwdToestel(user.id, req.body.deviceToken);
+      if (toestel) {
+        db.prepare('UPDATE trusted_devices SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(toestel.id);
+      } else {
+        return startTweedeStap(user, req, res);
+      }
+    }
+
+    return res.json(maakLoginAntwoord(user));
+  }
+
+  return res.status(400).json({ error: 'Vul e-mail en wachtwoord of boekingsreferentie in' });
+});
+
+// Bouwt het gewone, geslaagde login-antwoord.
+function maakLoginAntwoord(user, extra) {
+  const token = jwt.sign({
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    name: user.name
+  }, JWT_SECRET, { expiresIn: '24h' });
+
+  return Object.assign({
+    ok: true,
+    token,
+    user: { email: user.email, name: user.name, role: user.role },
+    redirect: user.role === 'admin' ? '/admin' : '/gasten/dashboard'
+  }, extra || {});
+}
+
+// Maakt een code van 6 cijfers, mailt die en antwoordt met een challenge-id.
+// Het wachtwoord is op dit punt al gecontroleerd; de challenge alleen is
+// waardeloos zonder de code uit de mailbox.
+function startTweedeStap(user, req, res) {
+  ruimVervallenCodesOp();
+
+  const naarAdres = process.env.ADMIN_2FA_EMAIL || user.email;
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  const challenge = crypto.randomBytes(24).toString('hex');
+
+  db.prepare(`INSERT INTO login_codes (challenge, user_id, code_hash, expires_at)
+              VALUES (?, ?, ?, ?)`)
+    .run(challenge, user.id, sha256(code), Date.now() + CODE_GELDIG_MS);
+
+  stuurInlogcode(naarAdres, code)
+    .then(via => console.log('[2fa] Inlogcode verstuurd naar ' + naarAdres + ' via ' + via))
+    .catch(err => {
+      // Zonder deze regel zou een mailstoring de beheerder buitensluiten.
+      // De logs zijn enkel voor root leesbaar; de code vervalt na 10 minuten.
+      console.error('[2fa] Versturen mislukt:', err.message);
+      console.error('[2fa] Noodcode voor ' + user.email + ': ' + code);
+    });
+
+  return res.json({
+    ok: true,
+    twofa: true,
+    challenge,
+    hint: maskeerAdres(naarAdres)
+  });
+}
+
+// info@walbrugge.be → i••••@walbrugge.be
+function maskeerAdres(adres) {
+  const [naam, domein] = String(adres).split('@');
+  if (!domein) return '';
+  return naam.slice(0, 1) + '•'.repeat(Math.max(naam.length - 1, 1)) + '@' + domein;
+}
+
+// Tweede stap: challenge + code inwisselen voor een token.
+app.post('/api/login/2fa', (req, res) => {
+  const { challenge, code, remember } = req.body || {};
+
+  if (!challenge || !code) {
+    return res.status(400).json({ error: 'Vul de code in' });
+  }
+
+  ruimVervallenCodesOp();
+  const rij = db.prepare('SELECT * FROM login_codes WHERE challenge = ?').get(challenge);
+
+  if (!rij || rij.expires_at < Date.now()) {
+    return res.status(401).json({ error: 'De code is verlopen. Log opnieuw in.' });
+  }
+
+  if (rij.attempts >= CODE_MAX_POGINGEN) {
+    db.prepare('DELETE FROM login_codes WHERE challenge = ?').run(challenge);
+    return res.status(429).json({ error: 'Te veel pogingen. Log opnieuw in.' });
+  }
+
+  if (!hashesGelijk(sha256(String(code).trim()), rij.code_hash)) {
+    db.prepare('UPDATE login_codes SET attempts = attempts + 1 WHERE challenge = ?').run(challenge);
+    const over = CODE_MAX_POGINGEN - (rij.attempts + 1);
+    return res.status(401).json({
+      error: over > 0 ? 'Verkeerde code. Nog ' + over + ' poging(en).' : 'Verkeerde code.'
     });
   }
-  
-  return res.status(400).json({ error: 'Vul e-mail en wachtwoord of boekingsreferentie in' });
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(rij.user_id);
+  if (!user) {
+    return res.status(401).json({ error: 'Gebruiker bestaat niet meer' });
+  }
+
+  // Code is eenmalig: meteen opruimen.
+  db.prepare('DELETE FROM login_codes WHERE challenge = ?').run(challenge);
+
+  const extra = {};
+  if (remember) {
+    extra.deviceToken = onthoudToestel(user.id, req.headers['user-agent']);
+  }
+
+  return res.json(maakLoginAntwoord(user, extra));
+});
+
+// Vertrouwde toestellen bekijken en intrekken.
+app.get('/api/admin/devices', authMiddleware('admin'), (req, res) => {
+  const toestellen = db.prepare(`
+    SELECT id, label, created_at, last_used_at
+    FROM trusted_devices WHERE user_id = ?
+    ORDER BY last_used_at DESC, created_at DESC
+  `).all(req.user.id);
+  res.json({ ok: true, devices: toestellen });
+});
+
+app.delete('/api/admin/devices/:id', authMiddleware('admin'), (req, res) => {
+  const info = db.prepare('DELETE FROM trusted_devices WHERE id = ? AND user_id = ?')
+    .run(req.params.id, req.user.id);
+  if (!info.changes) return res.status(404).json({ error: 'Toestel niet gevonden' });
+  res.json({ ok: true });
 });
 
 // Token verification
