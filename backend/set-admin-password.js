@@ -13,7 +13,7 @@ const readline = require('readline');
 const bcrypt = require('bcryptjs');
 const Database = require('better-sqlite3');
 
-const EMAIL = process.argv[2] || process.env.ADMIN_EMAIL || 'admin@walbrugge.be';
+const EMAIL = process.argv[2] || process.env.ADMIN_EMAIL || 'info@walbrugge.be';
 const db = new Database(path.join(__dirname, '..', 'data', 'walbrugge.db'));
 
 function vraagVerborgen(vraag) {

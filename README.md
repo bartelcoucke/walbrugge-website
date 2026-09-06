@@ -24,7 +24,7 @@ Automatisch via GitHub webhook. Elke push naar `main` wordt automatisch gedeploy
 ```
 
 ## 🔐 Login
-- **Admin:** admin@walbrugge.be
+- **Admin:** info@walbrugge.be
 - **Gasten:** email + boekingsreferentie
 
 ## 📞 Contact

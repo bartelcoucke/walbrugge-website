@@ -443,12 +443,30 @@ const startWachtwoord = process.env.ADMIN_PASSWORD || crypto.randomBytes(24).toS
 if (!process.env.ADMIN_PASSWORD) {
   console.warn('[auth] Geen ADMIN_PASSWORD ingesteld. Een nieuwe beheerder krijgt een willekeurig wachtwoord; kies er zelf een met: node set-admin-password.js');
 }
-const adminExists = db.prepare("SELECT id FROM users WHERE email = ?").get('admin@walbrugge.be');
-if (!adminExists) {
+// Het beheerdersadres is info@walbrugge.be: dat postvak bestaat echt, en de
+// inlogcode van de tweestapsverificatie moet aankomen. Bestaande installaties
+// stonden op admin@walbrugge.be — dat postvak bestaat niet — dus die naam
+// wordt hier omgezet met behoud van het wachtwoord.
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'info@walbrugge.be';
+const OUD_ADMIN_EMAIL = 'admin@walbrugge.be';
+
+const oudeAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(OUD_ADMIN_EMAIL);
+const nieuweAdmin = db.prepare('SELECT id FROM users WHERE email = ?').get(ADMIN_EMAIL);
+
+if (oudeAdmin && !nieuweAdmin) {
+  db.prepare('UPDATE users SET email = ? WHERE id = ?').run(ADMIN_EMAIL, oudeAdmin.id);
+  console.log('[auth] Beheerdersadres omgezet naar ' + ADMIN_EMAIL + ' (wachtwoord blijft gelden)');
+} else if (oudeAdmin && nieuweAdmin) {
+  // Beide bestaan al: de oude is een restant en mag weg.
+  db.prepare('DELETE FROM users WHERE id = ?').run(oudeAdmin.id);
+  console.log('[auth] Oude beheerder ' + OUD_ADMIN_EMAIL + ' verwijderd');
+}
+
+if (!db.prepare('SELECT id FROM users WHERE email = ?').get(ADMIN_EMAIL)) {
   const hash = bcrypt.hashSync(startWachtwoord, 12);
   db.prepare("INSERT INTO users (email, password_hash, role, name) VALUES (?, ?, 'admin', 'Administrator')")
-    .run('admin@walbrugge.be', hash);
-  console.log('Admin user created: admin@walbrugge.be');
+    .run(ADMIN_EMAIL, hash);
+  console.log('Admin user created: ' + ADMIN_EMAIL);
 }
 
 // Insert sample rooms if none exist
