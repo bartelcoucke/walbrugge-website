@@ -521,6 +521,119 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // Static files
+// ── Homepage met echte Google-beoordelingen ──────────────────────────────
+// De reviews worden server-side meegerenderd, zodat zoekmachines en
+// AI-crawlers ze zien, en het schema alleen claimt wat op de pagina staat.
+
+const REVIEW_TEKST = {
+  nl: { kop: 'Wat gasten schrijven', sub: 'Beoordelingen op Google',
+        van: 'op Google', alles: 'Alle beoordelingen op Google' },
+  fr: { kop: 'Ce que disent nos hôtes', sub: 'Avis sur Google',
+        van: 'sur Google', alles: 'Tous les avis sur Google' },
+  en: { kop: 'What guests write', sub: 'Reviews on Google',
+        van: 'on Google', alles: 'All reviews on Google' },
+  de: { kop: 'Was Gäste schreiben', sub: 'Bewertungen auf Google',
+        van: 'auf Google', alles: 'Alle Bewertungen auf Google' }
+};
+
+function escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function bouwReviewBlok(cache, lang) {
+  const t = REVIEW_TEKST[lang] || REVIEW_TEKST.nl;
+  const sterren = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+
+  const kaarten = cache.reviews.map(r =>
+    '<figure class="gr-card">' +
+      '<div class="gr-stars" aria-label="' + r.score + ' van 5">' + sterren(r.score) + '</div>' +
+      '<blockquote class="gr-text">' + escHtml(r.tekst) + '</blockquote>' +
+      '<figcaption class="gr-meta">— <strong>' + escHtml(r.auteur) + '</strong>' +
+        (r.wanneer ? ' · ' + escHtml(r.wanneer) : '') + ' · ' + t.van +
+      '</figcaption>' +
+    '</figure>'
+  ).join('');
+
+  return (
+    '<section class="section" id="google-reviews">' +
+      '<div class="container">' +
+        '<p class="kicker center">' + t.sub + '</p>' +
+        '<h2 class="center">' + t.kop + '</h2>' +
+        '<p class="center gr-score">' +
+          '<strong>' + String(cache.score).replace('.', ',') + '</strong> / 5 · ' +
+          cache.aantal + ' ' + (lang === 'fr' ? 'avis' : lang === 'de' ? 'Bewertungen'
+                               : lang === 'en' ? 'reviews' : 'beoordelingen') +
+        '</p>' +
+        '<div class="gr-grid">' + kaarten + '</div>' +
+        '<p class="center"><a href="' + escHtml(cache.kaartUrl) +
+          '" target="_blank" rel="noopener">' + t.alles + ' ↗</a></p>' +
+      '</div>' +
+    '</section>'
+  );
+}
+
+function bouwReviewSchema(cache) {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': 'https://walbrugge.be/#beoordelingen',
+    name: 'Domein Walbrugge',
+    url: 'https://walbrugge.be/',
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: String(cache.score),
+      bestRating: '5',
+      worstRating: '1',
+      ratingCount: String(cache.aantal)
+    },
+    review: cache.reviews.map(r => ({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: r.auteur },
+      reviewRating: { '@type': 'Rating', ratingValue: String(r.score), bestRating: '5' },
+      reviewBody: r.tekst,
+      datePublished: r.datum || undefined,
+      publisher: { '@type': 'Organization', name: 'Google' }
+    }))
+  });
+}
+
+function serveerHomepage(lang) {
+  return (req, res, next) => {
+    const map = lang
+      ? path.join(__dirname, '..', 'public', lang, 'index.html')
+      : path.join(__dirname, '..', 'public', 'index.html');
+    if (!fs.existsSync(map)) return next();
+
+    let html = fs.readFileSync(map, 'utf-8');
+    const cache = leesReviewCache();
+
+    // Zonder cache blijft de pagina exact zoals ze is.
+    if (cache && cache.score && cache.reviews && cache.reviews.length) {
+      const blok = bouwReviewBlok(cache, lang || 'nl');
+      html = html.replace('<section class="section section-cta">',
+                          blok + '\n<section class="section section-cta">');
+      html = html.replace('</head>',
+        '<script type="application/ld+json">' + bouwReviewSchema(cache) + '</script>\n</head>');
+      // De neutrale link in de hero vervangen door het echte cijfer. Staat er
+      // geen cache, dan blijft de link staan zonder cijfer — nooit een
+      // verzonnen score.
+      html = html.replace(
+        /<span class="google-proof">[^<]*<\/span>/,
+        'Google <span class="hero-proof-score">' +
+        String(cache.score).replace('.', ',') + '</span> / 5'
+      );
+    }
+    res.send(html);
+  };
+}
+
+app.get('/', serveerHomepage(null));
+app.get('/fr', serveerHomepage('fr'));
+app.get('/en', serveerHomepage('en'));
+app.get('/de', serveerHomepage('de'));
+
 // Eén URL per pagina. /teams/ en /index.html gaven eerder gewoon 200 met
 // dezelfde inhoud als de canonieke URL; dat is duplicate content. Deze
 // middleware moet vóór express.static staan.
@@ -1431,6 +1544,123 @@ app.get('/bb', serveBBPage(null));
 app.get('/fr/bb', serveBBPage('fr'));
 app.get('/en/bb', serveBBPage('en'));
 app.get('/de/bb', serveBBPage('de'));
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GOOGLE-BEOORDELINGEN
+// ═══════════════════════════════════════════════════════════════════════════
+// Haalt de echte score en de laatste reviews op bij de Places API, één keer
+// per dag. Zo staat er nooit een verouderd cijfer op de site en verzinnen we
+// niets: elke review draagt de naam van de schrijver en verwijst naar Google.
+//
+// Nodig in /etc/walbrugge.env:
+//   GOOGLE_PLACES_API_KEY=...
+//   GOOGLE_PLACE_ID=...        (optioneel; wordt anders opgezocht op naam)
+
+const PLACES_KEY = process.env.GOOGLE_PLACES_API_KEY;
+const PLACES_CACHE = path.join(DATA_DIR, 'google-reviews.json');
+const PLACES_MAX_LEEFTIJD = 24 * 60 * 60 * 1000;
+
+function leesReviewCache() {
+  try {
+    return JSON.parse(fs.readFileSync(PLACES_CACHE, 'utf-8'));
+  } catch (e) {
+    return null;
+  }
+}
+
+async function zoekPlaceId() {
+  if (process.env.GOOGLE_PLACE_ID) return process.env.GOOGLE_PLACE_ID;
+
+  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': PLACES_KEY,
+      'X-Goog-FieldMask': 'places.id,places.displayName'
+    },
+    body: JSON.stringify({ textQuery: 'Domein Walbrugge, Walbrugge 36, 8573 Anzegem' })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.places || !data.places.length) {
+    throw new Error('plaats niet gevonden: ' + JSON.stringify(data).slice(0, 200));
+  }
+  return data.places[0].id;
+}
+
+async function haalGoogleReviews() {
+  if (!PLACES_KEY) throw new Error('GOOGLE_PLACES_API_KEY niet ingesteld');
+
+  const placeId = await zoekPlaceId();
+  const res = await fetch(
+    'https://places.googleapis.com/v1/places/' + encodeURIComponent(placeId),
+    {
+      headers: {
+        'X-Goog-Api-Key': PLACES_KEY,
+        'X-Goog-FieldMask': 'rating,userRatingCount,googleMapsUri,reviews'
+      }
+    }
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error('Places gaf ' + res.status + ': ' + JSON.stringify(data).slice(0, 200));
+
+  const reviews = (data.reviews || [])
+    .filter(r => r.text && r.text.text && r.rating)
+    .slice(0, 6)
+    .map(r => ({
+      auteur: (r.authorAttribution && r.authorAttribution.displayName) || 'Google-gebruiker',
+      auteurUrl: (r.authorAttribution && r.authorAttribution.uri) || null,
+      score: r.rating,
+      tekst: r.text.text,
+      wanneer: r.relativePublishTimeDescription || '',
+      datum: r.publishTime || null
+    }));
+
+  const bewaard = {
+    score: data.rating || null,
+    aantal: data.userRatingCount || 0,
+    kaartUrl: data.googleMapsUri || 'https://www.google.com/search?q=domein+walbrugge',
+    reviews,
+    opgehaald: Date.now()
+  };
+
+  fs.mkdirSync(path.dirname(PLACES_CACHE), { recursive: true });
+  fs.writeFileSync(PLACES_CACHE, JSON.stringify(bewaard, null, 1));
+  console.log('[google] Score ' + bewaard.score + ' uit ' + bewaard.aantal +
+              ' beoordelingen, ' + reviews.length + ' reviews bewaard');
+  return bewaard;
+}
+
+async function ververGoogleReviews() {
+  if (!PLACES_KEY) return;
+  const cache = leesReviewCache();
+  if (cache && Date.now() - cache.opgehaald < PLACES_MAX_LEEFTIJD) return;
+  try {
+    await haalGoogleReviews();
+  } catch (err) {
+    // Bij een fout blijft de vorige cache staan: liever een cijfer van
+    // gisteren dan geen cijfer.
+    console.error('[google] Ophalen mislukt:', err.message);
+  }
+}
+
+// Bij de start en daarna elke zes uur kijken of de cache ververst moet worden.
+setTimeout(ververGoogleReviews, 20000).unref();
+setInterval(ververGoogleReviews, 6 * 60 * 60 * 1000).unref();
+
+app.get('/api/reviews', (req, res) => {
+  const cache = leesReviewCache();
+  if (!cache) {
+    return res.json({ ok: false, reden: PLACES_KEY ? 'nog niet opgehaald' : 'geen API-sleutel' });
+  }
+  res.json({
+    ok: true,
+    score: cache.score,
+    aantal: cache.aantal,
+    kaartUrl: cache.kaartUrl,
+    reviews: cache.reviews,
+    opgehaald: cache.opgehaald
+  });
+});
 
 // security.txt — RFC 9116. express.static laat bestanden met een punt vooraan
 // links liggen, dus een eigen route.

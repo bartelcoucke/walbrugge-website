@@ -3275,3 +3275,31 @@ a.hero-award-badge:hover {
 /* CTA: award-knoppen dichter bij het telefoonnummer erboven */
 .cta-block p + .hero-proof { margin-top: 0; }
 .cta-block p:has(+ .hero-proof) { margin-bottom: 14px; }
+
+/* ── Google-beoordelingen ─────────────────────────────────────────────── */
+.gr-score { font-size: 1.15rem; margin-bottom: 2rem; }
+.gr-score strong { color: var(--gold-dark); font-size: 1.5rem; }
+.gr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.gr-card {
+  margin: 0;
+  padding: 1.5rem;
+  background: var(--white);
+  border: 1px solid var(--linen-dark);
+  border-radius: var(--radius-lg);
+}
+.gr-stars { color: var(--gold-dark); letter-spacing: 2px; margin-bottom: 0.75rem; }
+.gr-text {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 7;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gr-meta { font-size: 0.85rem; color: var(--muted); }
