@@ -832,6 +832,53 @@ app.delete('/api/admin/devices/:id', authMiddleware('admin'), (req, res) => {
   res.json({ ok: true });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// TECHNISCH LOGBOEK
+// ═══════════════════════════════════════════════════════════════════════════
+// Toont het journal van de dienst in het beheerpaneel, zodat een herstart of
+// een mislukte mail zichtbaar is zonder SSH.
+
+const LOG_NIVEAUS = {
+  fout: /error|failed|mislukt|exception|fatal|\[2fa\] Versturen/i,
+  waarschuwing: /warn|waarschuwing|niet ingesteld/i
+};
+
+// Inlogcodes horen niet in een webpagina thuis, ook niet voor een beheerder.
+function verbergCodes(regel) {
+  return regel.replace(/(Noodcode voor [^:]+: )\d{6}/gi, '$1••••••');
+}
+
+function duidNiveau(regel) {
+  if (LOG_NIVEAUS.fout.test(regel)) return 'fout';
+  if (LOG_NIVEAUS.waarschuwing.test(regel)) return 'waarschuwing';
+  return 'info';
+}
+
+app.get('/api/admin/logs', authMiddleware('admin'), (req, res) => {
+  const aantal = Math.min(Math.max(parseInt(req.query.lines, 10) || 200, 10), 1000);
+  const { execFile } = require('child_process');
+
+  execFile('journalctl', ['-u', 'walbrugge', '-n', String(aantal), '--no-pager', '-o', 'short-iso'],
+    { timeout: 10000, maxBuffer: 4 * 1024 * 1024 },
+    (err, stdout) => {
+      if (err && !stdout) {
+        return res.status(500).json({
+          error: 'Logboek niet leesbaar op deze server: ' + err.message
+        });
+      }
+
+      const regels = String(stdout).split('\n')
+        .filter(r => r.trim() && !/^-- (Logs|No entries)/.test(r))
+        .map(r => {
+          const m = r.match(/^(\S+)\s+\S+\s+\S+?:\s?(.*)$/);
+          const tekst = verbergCodes(m ? m[2] : r);
+          return { tijd: m ? m[1] : '', tekst, niveau: duidNiveau(tekst) };
+        });
+
+      res.json({ ok: true, lines: regels });
+    });
+});
+
 // Token verification
 app.get('/api/me', authMiddleware(), (req, res) => {
   res.json({ ok: true, user: req.user });

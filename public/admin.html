@@ -93,6 +93,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
       <a href="#" data-section="rooms">🛏️ Kamers</a>
       <a href="#" data-section="blog">✍️ Blog</a>
       <a href="#" data-section="devices">🔐 Toestellen</a>
+      <a href="#" data-section="logs">📋 Logboek</a>
     </nav>
     <div class="sidebar-footer">
       <a href="https://analytics.google.com/analytics/web/#/a406916498p552781549/reports/intelligenthome" target="_blank" rel="noopener noreferrer" style="color:inherit;display:block;margin-bottom:8px;">📈 Google Analytics</a>
@@ -241,6 +242,36 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             <tbody id="devicesList">
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- Technisch logboek -->
+      <section id="section-logs" class="section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Technisch logboek</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="logFilter" onchange="renderLogs()"
+                style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;">
+                <option value="alles">Alles tonen</option>
+                <option value="fout">Enkel fouten</option>
+                <option value="waarschuwing">Fouten en waarschuwingen</option>
+              </select>
+              <button onclick="loadLogs()"
+                style="padding:6px 14px;border:1px solid var(--green-dark);background:#fff;color:var(--green-dark);border-radius:6px;cursor:pointer;font-size:0.85rem;">
+                Vernieuwen
+              </button>
+            </div>
+          </div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            De laatste 200 regels van de server. Nieuwste onderaan. Inlogcodes worden
+            afgeschermd en zijn hier bewust niet leesbaar.
+          </p>
+          <div id="logsBox" style="background:#1e1e1e;color:#ddd;border-radius:8px;padding:14px;
+               font-family:Consolas,Monaco,monospace;font-size:0.8rem;line-height:1.6;
+               max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-word;">
+            Laden…
+          </div>
         </div>
       </section>
 
@@ -506,6 +537,43 @@ async function loadDevices() {
   }
 }
 
+let logRegels = [];
+
+async function loadLogs() {
+  const box = document.getElementById('logsBox');
+  box.textContent = 'Laden…';
+  const data = await api('/admin/logs?lines=200');
+  if (!data.ok) {
+    box.textContent = data.error || 'Logboek kon niet geladen worden';
+    return;
+  }
+  logRegels = data.lines;
+  renderLogs();
+}
+
+function renderLogs() {
+  const box = document.getElementById('logsBox');
+  const filter = document.getElementById('logFilter').value;
+  const kleur = { fout: '#ff8a80', waarschuwing: '#ffd479', info: '#c9d1d9' };
+
+  const zichtbaar = logRegels.filter(r =>
+    filter === 'alles' ? true :
+    filter === 'fout' ? r.niveau === 'fout' :
+    r.niveau !== 'info'
+  );
+
+  if (!zichtbaar.length) {
+    box.textContent = filter === 'alles' ? 'Geen regels' : 'Niets gevonden met dit filter — dat is goed nieuws.';
+    return;
+  }
+
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  box.innerHTML = zichtbaar.map(r =>
+    `<div style="color:${kleur[r.niveau]};"><span style="color:#6a737d;">${esc(r.tijd)}</span>  ${esc(r.tekst)}</div>`
+  ).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
 async function revokeDevice(id) {
   if (!confirm('Dit toestel intrekken? Bij de volgende login wordt daar opnieuw een code gevraagd.')) return;
   const data = await api('/admin/devices/' + id, { method: 'DELETE' });
@@ -547,6 +615,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (section === 'rooms') await loadRooms();
     if (section === 'blog') await loadBlog();
     if (section === 'devices') await loadDevices();
+    if (section === 'logs') await loadLogs();
   });
 });
 
