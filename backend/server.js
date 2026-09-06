@@ -619,6 +619,15 @@ function serveerHomepage(lang) {
     if (!fs.existsSync(map)) return next();
 
     let html = fs.readFileSync(map, 'utf-8');
+
+    // Sterren meteen op de juiste breedte, ongeacht of er reviews opgehaald
+    // zijn: anders lichten er even vijf volle sterren op.
+    const gScore = parseFloat(String((leesScores().google || {}).score || '').replace(',', '.'));
+    if (!isNaN(gScore)) {
+      const pct = Math.max(0, Math.min(100, (gScore > 5 ? gScore / 2 : gScore) / 5 * 100)).toFixed(1);
+      html = html.replace(/(<span class="g-stars-fill" style="width:)100%(")/g, '$1' + pct + '%$2');
+    }
+
     const cache = leesReviewCache();
 
     // Zonder cache blijft de pagina exact zoals ze is.
@@ -628,14 +637,6 @@ function serveerHomepage(lang) {
                           blok + '\n<section class="section section-cta">');
       html = html.replace('</head>',
         '<script type="application/ld+json">' + bouwReviewSchema(cache) + '</script>\n</head>');
-      // De neutrale link in de hero vervangen door het echte cijfer. Staat er
-      // geen cache, dan blijft de link staan zonder cijfer — nooit een
-      // verzonnen score.
-      html = html.replace(
-        /<span class="google-proof">[^<]*<\/span>/,
-        'Google <span class="hero-proof-score">' +
-        String(cache.score).replace('.', ',') + '</span> / 5'
-      );
     }
     res.send(html);
   };
