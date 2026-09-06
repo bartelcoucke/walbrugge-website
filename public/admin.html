@@ -326,8 +326,11 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
           <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
             Geteld op de server, voor álle bezoekers — ook wie de cookies weigert. Er wordt geen
             IP-adres of browserkenmerk bewaard; "unieke bezoekers" zijn een schatting per dag.
-            Zoekrobots worden niet meegeteld. Bezoeken vanuit apps (WhatsApp, Facebook, mail)
-            hebben vaak geen herkenning en tellen als "rechtstreeks / onbekend".
+            Zoekrobots worden niet meegeteld. Klikken vanuit apps worden herkend waar dat kan
+            (Android-apps zoals WhatsApp en Gmail; de Facebook-, Instagram-, Messenger- en
+            LinkedIn-app op alle toestellen). Klikken op een iPhone vanuit WhatsApp, iMessage of
+            Apple Mail geven niets prijs en tellen als "rechtstreeks / onbekend" — gebruik voor
+            eigen berichten daarom UTM-links (zie Campagnes).
           </p>
         </div>
 
@@ -341,8 +344,8 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
         <div class="card">
           <div class="card-header"><h2>Herkomst</h2></div>
           <table>
-            <thead><tr><th>Bron</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Offertes</th></tr></thead>
-            <tbody id="bzBronnen"><tr><td colspan="3" class="empty">Laden…</td></tr></tbody>
+            <thead><tr><th>Bron</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Offertes</th><th style="text-align:right;">Boek B&amp;B</th></tr></thead>
+            <tbody id="bzBronnen"><tr><td colspan="4" class="empty">Laden…</td></tr></tbody>
           </table>
         </div>
 
@@ -711,7 +714,7 @@ async function loadBezoekers() {
   const dagen = document.getElementById('bezoekersDagen').value;
   const data = await api('/admin/bezoekers?dagen=' + dagen);
   if (!data.ok) {
-    document.getElementById('bzBronnen').innerHTML = '<tr><td colspan="3" class="empty">Kon statistiek niet laden</td></tr>';
+    document.getElementById('bzBronnen').innerHTML = '<tr><td colspan="4" class="empty">Kon statistiek niet laden</td></tr>';
     return;
   }
   const evt = naam => (data.events.find(e => e.naam === naam) || {}).aantal || 0;
@@ -725,8 +728,9 @@ async function loadBezoekers() {
   document.getElementById('bzBronnen').innerHTML = data.bronnen.length ? data.bronnen.map(b => `
     <tr><td>${b.bron ? esc(b.bron) : '<em>Rechtstreeks / onbekend</em>'}</td>
         <td style="text-align:right;">${nb(b.weergaven)}</td>
-        <td style="text-align:right;">${b.leads ? '<strong>' + nb(b.leads) + '</strong>' : '–'}</td></tr>`).join('')
-    : leeg(3, 'Nog geen bezoeken in deze periode');
+        <td style="text-align:right;">${b.leads ? '<strong>' + nb(b.leads) + '</strong>' : '–'}</td>
+        <td style="text-align:right;">${b.boekingen ? '<strong>' + nb(b.boekingen) + '</strong>' : '–'}</td></tr>`).join('')
+    : leeg(4, 'Nog geen bezoeken in deze periode');
 
   document.getElementById('bzCampagnes').innerHTML = data.campagnes.length ? data.campagnes.map(c => `
     <tr><td>${esc(c.utm_source || '–')}</td><td>${esc(c.utm_medium || '–')}</td><td>${esc(c.utm_campaign || '–')}</td>
