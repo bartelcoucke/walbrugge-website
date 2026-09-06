@@ -14,6 +14,7 @@
   /* Warme goud/brons tinten */
   --gold: #b8860b;
   --gold-dark: #8b6914;
+  --gold-deep: #6f5410;
   --gold-light: #d4a84b;
   --copper: #b87333;
   
@@ -209,7 +210,7 @@ p { margin-bottom: 1rem; }
 }
 
 .btn-gold {
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-deep) 100%);
   color: var(--white);
   box-shadow: 0 4px 15px var(--shadow-warm);
 }
@@ -341,7 +342,7 @@ header.nav,
 .nav-links a:hover::after { width: 100%; }
 
 .nav-cta {
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%) !important;
+  background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-deep) 100%) !important;
   color: var(--white) !important;
   padding: 12px 28px !important;
   border-radius: var(--radius) !important;
@@ -2791,7 +2792,7 @@ a.hero-award-badge:hover {
 }
 
 .blog-share a:hover {
-  color: var(--gold);
+  color: var(--gold-dark);
 }
 
 /* Responsive */
