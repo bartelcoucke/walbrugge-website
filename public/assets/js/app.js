@@ -323,8 +323,9 @@
 /* ── Serverside bezoekersstatistiek (zonder cookies) ────────────────────────
  * Stuurt enkele gebeurtenissen naar /api/telling: klik op de offerteknop,
  * offerte verstuurd, WhatsApp/Messenger/telefoon/e-mail, Boek B&B, klik op
- * een zaal en bladeren in een fotocarrousel. Er wordt niets op het toestel
- * bewaard; de server slaat geen IP of user-agent op.
+ * een zaal, bladeren in een fotocarrousel, klik op een award of reviewlink.
+ * Er wordt niets op het toestel bewaard; de server slaat geen IP of
+ * user-agent op.
  */
 (function () {
   var q = new URLSearchParams(location.search);
@@ -372,6 +373,19 @@
     return '';
   }
 
+  // Awards en reviewlinks: Salino, Booking.com, Eventplanner en Google. De
+  // award-kaarten onder "Erkend & gewaardeerd" tellen als 'tegel'; de badges in
+  // de hero, tekstlinks en knoppen als 'knop'. Google-routelinks tellen niet mee.
+  function awardVan(a, href) {
+    var h = href.toLowerCase();
+    var platform = h.indexOf('salino.be') !== -1 ? 'salino'
+      : h.indexOf('booking.com') !== -1 ? 'booking'
+      : h.indexOf('eventplanner.') !== -1 ? 'eventplanner'
+      : /google\.[a-z.]+\/search|g\.page\//.test(h) ? 'google' : '';
+    if (!platform) return '';
+    return platform + ':' + (a.classList.contains('award-card') ? 'tegel' : 'knop');
+  }
+
   document.addEventListener('click', function (ev) {
     var t = ev.target;
     if (!t || !t.closest) return;
@@ -380,6 +394,8 @@
     var a = t.closest('a[href]');
     if (!a) return;
     var href = a.getAttribute('href') || '';
+    var award = awardVan(a, href);
+    if (award) { stuur('award_click', award); return; }
     // Klik op een zaal: de zaaltegels op de teamspagina en de zaallinks op de
     // zaalpagina's zelf (niet de taalkeuze, die verwijst naar dezelfde zaal).
     var zaal = /^\/(?:fr\/|en\/|de\/)?ruimtes\/([a-z0-9-]+)/i.exec(href);

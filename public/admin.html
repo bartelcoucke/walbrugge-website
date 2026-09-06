@@ -344,6 +344,31 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
         </div>
 
         <div class="card">
+          <div class="card-header"><h2>Awards en reviewlinks</h2></div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            Klikken op de Salino-, Booking.com-, Eventplanner- en Google-links, per pagina (de vier
+            talen samengeteld). "Tegel" zijn de award-kaarten onder "Erkend &amp; gewaardeerd";
+            "Knop" is al de rest: de badges in de hero, de tekstlinks en de knoppen. Staat dezelfde
+            knop meerdere keren op een pagina, dan worden die samengeteld.
+          </p>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr><th rowspan="2">Pagina</th><th rowspan="2" style="text-align:right;">Weergaven</th>
+                    <th colspan="2" style="text-align:center;">Salino</th><th colspan="2" style="text-align:center;">Booking.com</th>
+                    <th colspan="2" style="text-align:center;">Eventplanner</th><th colspan="2" style="text-align:center;">Google reviews</th>
+                    <th rowspan="2" style="text-align:right;">Totaal</th></tr>
+                <tr><th style="text-align:right;">Knop</th><th style="text-align:right;">Tegel</th>
+                    <th style="text-align:right;">Knop</th><th style="text-align:right;">Tegel</th>
+                    <th style="text-align:right;">Knop</th><th style="text-align:right;">Tegel</th>
+                    <th style="text-align:right;">Link</th><th style="text-align:right;">Tegel</th></tr>
+              </thead>
+              <tbody id="bzAwards"><tr><td colspan="11" class="empty">Laden…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
           <div class="card-header"><h2>Campagnes (UTM-links)</h2></div>
           <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
             Gebruik in eigen berichten en advertenties links als
@@ -678,6 +703,7 @@ const EVENT_NAAM = {
   email_click: 'Klik op e-mailadres',
   zaal_click: 'Klik op een zaal (naar de zaalpagina)',
   carrousel: 'Bladeren in een fotocarrousel',
+  award_click: 'Klik op een award of reviewlink',
   oude_url: 'Binnengekomen via een oude WordPress-URL'
 };
 const TAAL_NAAM = { nl: 'Nederlands', fr: 'Frans', en: 'Engels', de: 'Duits' };
@@ -688,6 +714,23 @@ const ZAAL_NAAM = {
 };
 const KAMER_NAAM = { campanula: 'Campanula', 'chicory-ast': 'Chicory Ast', 'cornus-mas': 'Cornus Mas', eucalyptus: 'Eucalyptus', kardoen: 'Kardoen' };
 const FEEST_NAAM = { trouw: 'Huwelijksfeest', familie: 'Communie · lentefeest · verjaardag', koffietafel: 'Koffietafel' };
+const AWARD_PLATFORM = [['salino', 'Salino'], ['booking', 'Booking.com'], ['eventplanner', 'Eventplanner'], ['google', 'Google reviews']];
+const PAGINA_NAAM = {
+  '/': 'Homepage', '/teams': 'Teams & organisaties', '/feesten': 'Feesten', '/bb': 'B&B', '/contact': 'Contact',
+  '/offerte': 'Offerte', '/zakelijk': 'Zakelijk', '/over-ons': 'Over ons', '/blog': 'Blog', '/feestzaal': 'Feestzaal'
+};
+function paginaNaam(p) {
+  if (PAGINA_NAAM[p]) return PAGINA_NAAM[p];
+  const z = /^\/ruimtes\/([a-z0-9-]+)/.exec(p || '');
+  if (z) return 'Zaal: ' + (ZAAL_NAAM[z[1]] || z[1]);
+  return p || '–';
+}
+// Naam van een award-klik (salino:knop, booking:tegel, google:knop, …)
+function awardNaam(id) {
+  const [platform, soort] = String(id || '').split(':');
+  const naam = (AWARD_PLATFORM.find(([k]) => k === platform) || [])[1] || platform;
+  return naam + (soort === 'tegel' ? ' (tegel)' : platform === 'google' ? ' (link)' : ' (knop)');
+}
 // Naam van een carrousel (zaal:<slug>, kamer:<naam>, feest:<naam>) voor in de tabellen
 function carrouselNaam(id) {
   const [type, sleutel] = String(id || '').split(':');
@@ -699,6 +742,7 @@ function carrouselNaam(id) {
 function detailNaam(e) {
   if (e.naam === 'carrousel') return carrouselNaam(e.detail);
   if (e.naam === 'zaal_click') return ZAAL_NAAM[e.detail] || e.detail || '–';
+  if (e.naam === 'award_click') return awardNaam(e.detail);
   return e.detail || '–';
 }
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -739,6 +783,30 @@ async function loadBezoekers() {
         <td style="text-align:right;">${nb(c.bezoekers)}</td>
         <td style="text-align:right;">${c.paginaBezoekers ? Math.round(c.bezoekers / c.paginaBezoekers * 100) + ' %' : '–'}</td></tr>`).join('')
     : leeg(5, 'Nog geen carrouselklikken in deze periode');
+
+  // Awards en reviewlinks: matrix pagina × (platform, knop/tegel)
+  const perPagina = new Map();
+  (data.awards || []).forEach(r => {
+    if (!perPagina.has(r.pagina)) perPagina.set(r.pagina, { pagina: r.pagina, totaal: 0, cel: {} });
+    const p = perPagina.get(r.pagina);
+    p.cel[r.detail] = (p.cel[r.detail] || 0) + r.klikken;
+    p.totaal += r.klikken;
+  });
+  const weergavenVan = Object.fromEntries((data.awardWeergaven || []).map(w => [w.pagina, w.weergaven]));
+  const awardKolommen = AWARD_PLATFORM.flatMap(([k]) => [k + ':knop', k + ':tegel']);
+  const awardTotaal = {};
+  const awardPaginas = [...perPagina.values()].sort((a, b) => b.totaal - a.totaal);
+  const rechts = 'style="text-align:right;"';
+  document.getElementById('bzAwards').innerHTML = awardPaginas.length ? awardPaginas.map(p => `
+    <tr><td>${esc(paginaNaam(p.pagina))}</td>
+        <td ${rechts}>${nb(weergavenVan[p.pagina] || 0)}</td>
+        ${awardKolommen.map(k => { awardTotaal[k] = (awardTotaal[k] || 0) + (p.cel[k] || 0);
+          return `<td ${rechts}>${p.cel[k] ? '<strong>' + nb(p.cel[k]) + '</strong>' : '–'}</td>`; }).join('')}
+        <td ${rechts}>${nb(p.totaal)}</td></tr>`).join('')
+    + `<tr style="font-weight:600;"><td>Totaal</td><td></td>
+        ${awardKolommen.map(k => `<td ${rechts}>${awardTotaal[k] ? nb(awardTotaal[k]) : '–'}</td>`).join('')}
+        <td ${rechts}>${nb(awardPaginas.reduce((s, p) => s + p.totaal, 0))}</td></tr>`
+    : leeg(11, 'Nog geen klikken op awards of reviewlinks in deze periode');
 
   document.getElementById('bzCampagnes').innerHTML = data.campagnes.length ? data.campagnes.map(c => `
     <tr><td>${esc(c.utm_source || '–')}</td><td>${esc(c.utm_medium || '–')}</td><td>${esc(c.utm_campaign || '–')}</td>

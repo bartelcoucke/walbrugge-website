@@ -567,7 +567,7 @@ try {
 
 const STATS_EIGEN_HOSTS = new Set(['walbrugge.be', 'www.walbrugge.be', '2.28.71.249', 'localhost', '127.0.0.1']);
 const STATS_BOT = /bot|crawl|spider|slurp|preview|monitor|fetch|scan|curl|wget|python|java\/|headless|lighthouse|pingdom|uptime|facebookexternalhit|whatsapp|telegrambot|linkedinbot|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|ccbot/i;
-const STATS_EVENTS = new Set(['offerte_click', 'generate_lead', 'whatsapp_click', 'messenger_click', 'phone_click', 'email_click', 'booking_click', 'zaal_click', 'carrousel']);
+const STATS_EVENTS = new Set(['offerte_click', 'generate_lead', 'whatsapp_click', 'messenger_click', 'phone_click', 'email_click', 'booking_click', 'zaal_click', 'carrousel', 'award_click']);
 
 function statsDag() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Brussels' });
@@ -790,7 +790,16 @@ app.get('/api/admin/bezoekers', authMiddleware('admin'), (req, res) => {
                klikken: c.klikken, bezoekers: c.bezoekers, paginaWeergaven: p.weergaven || 0, paginaBezoekers: p.bezoekers || 0 };
     });
 
-  res.json({ ok: true, periode: { van, tot, dagen }, totaal, events, perDag, bronnen, paginas, campagnes, talen, toestellen, eventsDetail, zalen, carrousels });
+  // Awards en reviewlinks: klikken op de Salino-, Booking.com-, Eventplanner-
+  // en Google-links (event award_click, detail = '<platform>:<soort>', met soort
+  // 'tegel' voor de award-kaarten en 'knop' voor al de rest). Per pagina, de
+  // vier talen samengeteld; meerdere gelijke knoppen op één pagina tellen samen.
+  const PAGINA_ZONDER_TAAL = "CASE WHEN pad IN ('/fr', '/en', '/de', '/fr/', '/en/', '/de/') THEN '/' WHEN pad LIKE '/fr/%' OR pad LIKE '/en/%' OR pad LIKE '/de/%' THEN substr(pad, 4) ELSE pad END";
+  const awards = all(`SELECT ${PAGINA_ZONDER_TAAL} AS pagina, detail, COUNT(*) AS klikken, COUNT(DISTINCT bezoeker || dag) AS bezoekers
+                      FROM events ${w} AND naam = 'award_click' GROUP BY pagina, detail ORDER BY klikken DESC LIMIT 200`, van, tot);
+  const awardWeergaven = all(`SELECT ${PAGINA_ZONDER_TAAL} AS pagina, COUNT(*) AS weergaven FROM visits ${w} GROUP BY pagina`, van, tot);
+
+  res.json({ ok: true, periode: { van, tot, dagen }, totaal, events, perDag, bronnen, paginas, campagnes, talen, toestellen, eventsDetail, zalen, carrousels, awards, awardWeergaven });
 });
 
 
