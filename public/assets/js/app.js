@@ -319,3 +319,63 @@
     })
     .catch(function () { /* stil falen: de HTML-waarde blijft staan */ });
 })();
+
+/* ── Serverside bezoekersstatistiek (zonder cookies) ────────────────────────
+ * Stuurt enkele gebeurtenissen naar /api/track: klik op de offerteknop,
+ * offerte verstuurd, WhatsApp/Messenger/telefoon/e-mail, Boek B&B. Er wordt
+ * niets op het toestel bewaard; de server slaat geen IP of user-agent op.
+ */
+(function () {
+  var EIGEN = /^(www\.)?walbrugge\.be$|^localhost$|^127\.0\.0\.1$|^2\.28\.71\.249$/;
+  function bronVan(ref) {
+    try {
+      var h = new URL(ref).hostname.toLowerCase();
+      return (h && !EIGEN.test(h) && h !== location.hostname) ? h : '';
+    } catch (e) { return ''; }
+  }
+  var q = new URLSearchParams(location.search);
+  var basis = {
+    pad: location.pathname,
+    taal: document.documentElement.lang || 'nl',
+    ref: bronVan(document.referrer),
+    utm_source: q.get('utm_source') || '',
+    utm_medium: q.get('utm_medium') || '',
+    utm_campaign: q.get('utm_campaign') || ''
+  };
+  function stuur(naam, detail) {
+    var body = JSON.stringify(Object.assign({ naam: naam, detail: detail || '' }, basis));
+    try {
+      if (navigator.sendBeacon && navigator.sendBeacon('/api/track', new Blob([body], { type: 'application/json' }))) return;
+    } catch (e) { /* val terug op fetch */ }
+    try {
+      fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true })
+        .catch(function () {});
+    } catch (e) { /* stil */ }
+  }
+  var tekst = function (a) { return (a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60); };
+
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+    if (!a) return;
+    var href = a.getAttribute('href') || '';
+    if (/^\/(fr\/|en\/|de\/)?offerte(\?|#|$)/.test(href)) stuur('offerte_click', tekst(a));
+    else if (href.indexOf('wa.me/') !== -1 || href.indexOf('whatsapp.com') !== -1) stuur('whatsapp_click');
+    else if (href.indexOf('m.me/') !== -1 || href.indexOf('messenger.com') !== -1) stuur('messenger_click');
+    else if (href.indexOf('bookingengine.mylighthouse.com') !== -1) stuur('booking_click', tekst(a));
+    else if (href.indexOf('tel:') === 0) stuur('phone_click');
+    else if (href.indexOf('mailto:') === 0) stuur('email_click');
+  }, true);
+
+  // Offerte verstuurd: de offertepagina's roepen walbruggeTrack('generate_lead') aan
+  // (dat stuurt naar Google Analytics, enkel na toestemming). Hier haken we in
+  // zodat de server het altijd telt — met of zonder cookies.
+  function koppel() {
+    var orig = window.walbruggeTrack;
+    window.walbruggeTrack = function (naam, params) {
+      if (naam === 'generate_lead') stuur('generate_lead', params && params.event_type ? String(params.event_type) : '');
+      if (typeof orig === 'function') { try { orig(naam, params); } catch (e) { /* stil */ } }
+    };
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', koppel);
+  else koppel();
+})();

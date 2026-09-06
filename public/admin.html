@@ -95,6 +95,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
       <a href="#" data-section="blog">✍️ Blog</a>
       <a href="#" data-section="scores">⭐ Scores</a>
       <a href="#" data-section="devices">🔐 Toestellen</a>
+      <a href="#" data-section="bezoekers">📈 Bezoekers</a>
       <a href="#" data-section="logs">📋 Logboek</a>
     </nav>
     <div class="sidebar-footer">
@@ -300,6 +301,94 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
                max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-word;">
             Laden…
           </div>
+        </div>
+      </section>
+
+      <!-- Bezoekers Section (serverside statistiek, zonder cookies) -->
+      <section id="section-bezoekers" class="section" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Bezoekers</h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <select id="bezoekersDagen" onchange="loadBezoekers()"
+                style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;">
+                <option value="7">Laatste 7 dagen</option>
+                <option value="30" selected>Laatste 30 dagen</option>
+                <option value="90">Laatste 90 dagen</option>
+                <option value="365">Laatste 365 dagen</option>
+              </select>
+              <button onclick="loadBezoekers()"
+                style="padding:6px 14px;border:1px solid var(--green-dark);background:#fff;color:var(--green-dark);border-radius:6px;cursor:pointer;font-size:0.85rem;">
+                Vernieuwen
+              </button>
+            </div>
+          </div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            Geteld op de server, voor álle bezoekers — ook wie de cookies weigert. Er wordt geen
+            IP-adres of browserkenmerk bewaard; "unieke bezoekers" zijn een schatting per dag.
+            Zoekrobots worden niet meegeteld. Bezoeken vanuit apps (WhatsApp, Facebook, mail)
+            hebben vaak geen herkenning en tellen als "rechtstreeks / onbekend".
+          </p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><h3>Paginaweergaven</h3><div class="num" id="bzWeergaven">-</div></div>
+          <div class="stat-card"><h3>Unieke bezoekers</h3><div class="num" id="bzBezoekers">-</div></div>
+          <div class="stat-card"><h3>Offertes verstuurd</h3><div class="num" id="bzLeads">-</div></div>
+          <div class="stat-card"><h3>Klik naar Boek B&amp;B</h3><div class="num" id="bzBooking">-</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Herkomst</h2></div>
+          <table>
+            <thead><tr><th>Bron</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Offertes</th></tr></thead>
+            <tbody id="bzBronnen"><tr><td colspan="3" class="empty">Laden…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Campagnes (UTM-links)</h2></div>
+          <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
+            Gebruik in eigen berichten en advertenties links als
+            <code>walbrugge.be/?utm_source=facebook&amp;utm_medium=post&amp;utm_campaign=trouwbeurs</code>;
+            die verschijnen hier met hun resultaat.
+          </p>
+          <table>
+            <thead><tr><th>Bron</th><th>Medium</th><th>Campagne</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Offertes</th></tr></thead>
+            <tbody id="bzCampagnes"><tr><td colspan="5" class="empty">Laden…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Gebeurtenissen</h2></div>
+          <table>
+            <thead><tr><th>Gebeurtenis</th><th style="text-align:right;">Aantal</th></tr></thead>
+            <tbody id="bzEvents"><tr><td colspan="2" class="empty">Laden…</td></tr></tbody>
+          </table>
+          <details style="margin-top:12px;">
+            <summary style="cursor:pointer;color:#666;font-size:0.9rem;">Detail per knop en pagina</summary>
+            <table style="margin-top:8px;">
+              <thead><tr><th>Gebeurtenis</th><th>Knop / detail</th><th>Pagina</th><th style="text-align:right;">Aantal</th></tr></thead>
+              <tbody id="bzEventsDetail"></tbody>
+            </table>
+          </details>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Pagina's</h2></div>
+          <table>
+            <thead><tr><th>Pagina</th><th style="text-align:right;">Weergaven</th></tr></thead>
+            <tbody id="bzPaginas"><tr><td colspan="2" class="empty">Laden…</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h2>Per dag</h2></div>
+          <p id="bzTalen" style="margin:0 0 12px;color:#666;font-size:0.9rem;"></p>
+          <table>
+            <thead><tr><th>Dag</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Bezoekers</th><th style="text-align:right;">Offertes</th><th style="width:40%;"></th></tr></thead>
+            <tbody id="bzPerDag"><tr><td colspan="5" class="empty">Laden…</td></tr></tbody>
+          </table>
         </div>
       </section>
 
@@ -603,6 +692,74 @@ async function saveScore(bron) {
 
 let logRegels = [];
 
+// Bezoekersstatistiek (serverside, zonder cookies)
+const EVENT_NAAM = {
+  offerte_click: 'Klik op "Offerte aanvragen"',
+  generate_lead: 'Offerteformulier verstuurd',
+  booking_click: 'Klik naar Boek B&B (boekingsengine)',
+  whatsapp_click: 'Klik op WhatsApp',
+  messenger_click: 'Klik op Messenger',
+  phone_click: 'Klik op telefoonnummer',
+  email_click: 'Klik op e-mailadres',
+  oude_url: 'Binnengekomen via een oude WordPress-URL'
+};
+const TAAL_NAAM = { nl: 'Nederlands', fr: 'Frans', en: 'Engels', de: 'Duits' };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const nb = n => new Intl.NumberFormat('nl-BE').format(n || 0);
+
+async function loadBezoekers() {
+  const dagen = document.getElementById('bezoekersDagen').value;
+  const data = await api('/admin/bezoekers?dagen=' + dagen);
+  if (!data.ok) {
+    document.getElementById('bzBronnen').innerHTML = '<tr><td colspan="3" class="empty">Kon statistiek niet laden</td></tr>';
+    return;
+  }
+  const evt = naam => (data.events.find(e => e.naam === naam) || {}).aantal || 0;
+  document.getElementById('bzWeergaven').textContent = nb(data.totaal.weergaven);
+  document.getElementById('bzBezoekers').textContent = nb(data.totaal.bezoekers);
+  document.getElementById('bzLeads').textContent = nb(evt('generate_lead'));
+  document.getElementById('bzBooking').textContent = nb(evt('booking_click'));
+
+  const leeg = (n, tekst) => `<tr><td colspan="${n}" class="empty">${tekst}</td></tr>`;
+
+  document.getElementById('bzBronnen').innerHTML = data.bronnen.length ? data.bronnen.map(b => `
+    <tr><td>${b.bron ? esc(b.bron) : '<em>Rechtstreeks / onbekend</em>'}</td>
+        <td style="text-align:right;">${nb(b.weergaven)}</td>
+        <td style="text-align:right;">${b.leads ? '<strong>' + nb(b.leads) + '</strong>' : '–'}</td></tr>`).join('')
+    : leeg(3, 'Nog geen bezoeken in deze periode');
+
+  document.getElementById('bzCampagnes').innerHTML = data.campagnes.length ? data.campagnes.map(c => `
+    <tr><td>${esc(c.utm_source || '–')}</td><td>${esc(c.utm_medium || '–')}</td><td>${esc(c.utm_campaign || '–')}</td>
+        <td style="text-align:right;">${nb(c.weergaven)}</td>
+        <td style="text-align:right;">${c.leads ? '<strong>' + nb(c.leads) + '</strong>' : '–'}</td></tr>`).join('')
+    : leeg(5, 'Nog geen bezoeken via UTM-links');
+
+  document.getElementById('bzEvents').innerHTML = data.events.length ? data.events.map(e => `
+    <tr><td>${esc(EVENT_NAAM[e.naam] || e.naam)}</td><td style="text-align:right;">${nb(e.aantal)}</td></tr>`).join('')
+    : leeg(2, 'Nog geen gebeurtenissen in deze periode');
+
+  document.getElementById('bzEventsDetail').innerHTML = data.eventsDetail.map(e => `
+    <tr><td>${esc(EVENT_NAAM[e.naam] || e.naam)}</td><td>${esc(e.detail || '–')}</td><td>${esc(e.pad)}</td>
+        <td style="text-align:right;">${nb(e.aantal)}</td></tr>`).join('');
+
+  document.getElementById('bzPaginas').innerHTML = data.paginas.length ? data.paginas.map(p => `
+    <tr><td>${esc(p.pad)}</td><td style="text-align:right;">${nb(p.aantal)}</td></tr>`).join('')
+    : leeg(2, 'Nog geen bezoeken');
+
+  const talen = data.talen.map(t => `${TAAL_NAAM[t.taal] || t.taal} ${nb(t.aantal)}`).join(' · ');
+  const toest = data.toestellen.map(t => `${t.toestel} ${nb(t.aantal)}`).join(' · ');
+  document.getElementById('bzTalen').textContent = (talen ? 'Talen: ' + talen : '') + (toest ? '   |   Toestellen: ' + toest : '');
+
+  const max = Math.max(1, ...data.perDag.map(d => d.weergaven));
+  document.getElementById('bzPerDag').innerHTML = data.perDag.length ? data.perDag.map(d => `
+    <tr><td>${new Date(d.dag + 'T12:00:00').toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' })}</td>
+        <td style="text-align:right;">${nb(d.weergaven)}</td>
+        <td style="text-align:right;">${nb(d.bezoekers)}</td>
+        <td style="text-align:right;">${d.leads ? '<strong>' + nb(d.leads) + '</strong>' : '–'}</td>
+        <td><div style="height:10px;border-radius:5px;background:var(--green-dark);opacity:0.75;width:${Math.round(d.weergaven / max * 100)}%;"></div></td></tr>`).join('')
+    : leeg(5, 'Nog geen bezoeken in deze periode');
+}
+
 async function loadLogs() {
   const box = document.getElementById('logsBox');
   box.textContent = 'Laden…';
@@ -681,6 +838,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (section === 'scores') await loadScores();
     if (section === 'devices') await loadDevices();
     if (section === 'logs') await loadLogs();
+    if (section === 'bezoekers') await loadBezoekers();
   });
 });
 
