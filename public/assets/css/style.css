@@ -3304,6 +3304,11 @@ a.hero-award-badge:hover {
 }
 .gr-meta { font-size: 0.85rem; color: var(--muted); }
 
+/* B&B reviews: Booking.com- en Google-tile naast elkaar */
+.reviews-booking-card { gap: 32px; flex-wrap: wrap; align-items: stretch; }
+.reviews-booking-card .award-card { min-width: 230px; }
+.award-google-logo { height: 30px; width: auto; }
+.award-google-stars { height: 22px; width: auto; }
 /* ── Google-sterren die de echte score volgen ──────────────────────────
  * Vijf sterren als achtergrond, daarover een gouden laag die precies zo
  * breed is als de score. Zo toont 4,6 ook echt 4,6 ster.
