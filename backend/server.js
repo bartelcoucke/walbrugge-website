@@ -725,6 +725,13 @@ app.use((req, res, next) => {
 // Het adres voor de code is standaard dat van de gebruiker zelf; met
 // ADMIN_2FA_EMAIL in /etc/walbrugge.env kan een ander postvak gekozen worden.
 
+// Tweestapsverificatie staat aan tenzij ADMIN_2FA op 'uit' / 'off' / '0' staat.
+// De herstelweg voor een vergeten wachtwoord blijft altijd werken.
+const TWEESTAPS_AAN = !['uit', 'off', 'false', '0', 'nee'].includes(
+  String(process.env.ADMIN_2FA || 'aan').trim().toLowerCase());
+
+console.log('[auth] Tweestapsverificatie beheerder: ' + (TWEESTAPS_AAN ? 'AAN' : 'UIT'));
+
 const CODE_GELDIG_MS = 10 * 60 * 1000;   // code vervalt na 10 minuten
 const CODE_MAX_POGINGEN = 5;             // daarna is de code verbrand
 
@@ -973,7 +980,9 @@ app.post('/api/login', loginBegrenzer, (req, res) => {
     }
 
     // Beheerders doorlopen een tweede stap, tenzij dit toestel al bevestigd is.
-    if (user.role === 'admin') {
+    // Uit te zetten met ADMIN_2FA=uit in /etc/walbrugge.env; de code blijft
+    // staan, zodat aanzetten later één regel is.
+    if (user.role === 'admin' && TWEESTAPS_AAN) {
       const toestel = zoekVertrouwdToestel(user.id, req.body.deviceToken);
       if (toestel) {
         db.prepare('UPDATE trusted_devices SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?')
