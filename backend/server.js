@@ -756,7 +756,7 @@ app.get('/api/admin/bezoekers', authMiddleware('admin'), (req, res) => {
   const toestellen = all(`SELECT toestel, COUNT(*) AS aantal FROM visits ${w} GROUP BY toestel ORDER BY aantal DESC`, van, tot);
   const eventsDetail = all(`
     SELECT naam, COALESCE(detail, '') AS detail, COALESCE(pad, '') AS pad, COUNT(*) AS aantal
-    FROM events ${w} GROUP BY naam, detail, pad ORDER BY aantal DESC LIMIT 40`, van, tot);
+    FROM events ${w} GROUP BY naam, detail, pad ORDER BY aantal DESC LIMIT 200`, van, tot);
 
   // Zalen: klikken op een zaaltegel of -link (event zaal_click, detail = slug),
   // weergaven van de zaalpagina (/ruimtes/<slug>, in elke taal) en klikken in
