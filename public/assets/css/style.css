@@ -1291,8 +1291,36 @@ header.nav,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 4px rgba(184, 134, 11, 0.1);
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 0 3px rgba(139, 105, 20, 0.45);
+}
+
+/* Wie met de toetsenbord navigeert moet zien waar hij staat. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--gold-dark);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Sla de navigatie over en spring naar de inhoud. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100000;
+  padding: 12px 20px;
+  background: var(--green-dark);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  left: 0;
 }
 
 .form-group textarea { 
