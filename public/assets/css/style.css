@@ -2352,9 +2352,29 @@ a.hero-award-badge:hover {
 
 .slide img {
   width: 100%;
-  height: 400px;
+  height: auto;
+  aspect-ratio: 3 / 2;   /* vaste verhouding i.p.v. vaste hoogte: geen "inzoomen" op brede, lage kaders */
   object-fit: cover;
   display: block;
+}
+
+/* Staande foto's: volledig zichtbaar, op een vervaagde versie van dezelfde foto */
+.slide-staand {
+  position: relative;
+  overflow: hidden;
+}
+
+.slide-staand::before {
+  content: '';
+  position: absolute;
+  inset: -24px;
+  background: var(--slide-bg) center / cover no-repeat;
+  filter: blur(20px) brightness(0.85);
+}
+
+.slide-staand img {
+  position: relative;
+  object-fit: contain;
 }
 
 .slider-btn {
@@ -2518,7 +2538,7 @@ a.hero-award-badge:hover {
   }
   
   .slide img {
-    height: 300px;
+    aspect-ratio: 3 / 2;
   }
   
   .praktisch-grid {
@@ -2536,7 +2556,7 @@ a.hero-award-badge:hover {
   }
   
   .slide img {
-    height: 250px;
+    aspect-ratio: 4 / 3;   /* op een smal scherm iets hoger, zodat staande foto's niet te klein worden */
   }
 }
 
