@@ -569,9 +569,10 @@ db.exec(`
 //   ms         millisecondestempel van de client; ts heeft maar secondeprecisie,
 //              waardoor een klik en een paginaweergave in dezelfde seconde anders
 //              in willekeurige volgorde staan
-//   pagina_id  willekeurige sleutel per paginaweergave, meegegeven door app.js;
-//              zo hangt een klik altijd aan de juiste pagina, ook als de beacon
-//              later aankomt of het toestel intussen van netwerk wisselde
+//   pagina_id  willekeurige sleutel per paginabezoek, meegegeven door app.js. Staat
+//              enkel op gebeurtenissen: zo is te zien welke klikken tijdens hetzelfde
+//              paginabezoek gebeurden. Een paginaweergave zelf draagt geen sleutel,
+//              want een gewone paginaoproep bevat er geen.
 //   toestel_id stabiele hash van adres en browser: onderscheidt toestellen binnen
 //              één gedeeld adres (gezin, kantoor, mobiel netwerk)
 // Het adres van waaraf een offerteaanvraag verstuurd werd, zodat een dossier een naam krijgt.
@@ -582,6 +583,11 @@ for (const tabel of ['visits', 'events']) {
   for (const [kolom, type] of [['ip', 'TEXT'], ['ms', 'INTEGER'], ['pagina_id', 'TEXT'], ['toestel_id', 'TEXT']]) {
     if (!bestaand.includes(kolom)) db.exec('ALTER TABLE ' + tabel + ' ADD COLUMN ' + kolom + ' ' + type);
   }
+}
+
+if (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='stats_toestellen'").get()
+    && !db.prepare('PRAGMA table_info(stats_toestellen)').all().some(k => k.name === 'ip_volledig')) {
+  db.exec('ALTER TABLE stats_toestellen ADD COLUMN ip_volledig TEXT');
 }
 
 db.exec(`
@@ -606,7 +612,8 @@ db.exec(`
     toestel TEXT,
     eerste_ts DATETIME DEFAULT CURRENT_TIMESTAMP,
     laatste_ts DATETIME DEFAULT CURRENT_TIMESTAMP,
-    js INTEGER DEFAULT 0
+    js INTEGER DEFAULT 0,
+    ip_volledig TEXT
   );
   CREATE INDEX IF NOT EXISTS idx_toestellen_ip ON stats_toestellen(ip);
 
@@ -660,6 +667,35 @@ function statsIp(req) {
   return groepen.slice(0, 4).map(g => g.replace(/^0+(?=.)/, '')).join(':') + '::/64';
 }
 
+// Het volledige adres, zonder samenvatting tot /64. Enkel gebruikt om de naam van de
+// provider op te zoeken: een /64-net is niet op te zoeken, een volledig adres wel.
+function statsIpVolledig(req) {
+  let ip = String((req && req.ip) || '').trim();
+  if (!ip) return null;
+  if (ip.startsWith('::ffff:')) ip = ip.slice(7);
+  return ip.split('%')[0].slice(0, 45) || null;
+}
+
+// Telefoon, tablet of gewone computer, afgeleid uit de browserreeks.
+function statsToestelSoort(ua) {
+  const s = String(ua || '');
+  if (/iPad/.test(s) || (/Macintosh/.test(s) && /Mobile/.test(s)) || (/Android/.test(s) && !/Mobile/.test(s)) || /Tablet|PlayBook|Silk/.test(s)) return 'tablet';
+  if (/iPhone|iPod/.test(s) || (/Android/.test(s) && /Mobile/.test(s)) || /Mobi|Windows Phone/.test(s)) return 'telefoon';
+  return 'desktop';
+}
+
+// Het land uit de naam van de provider. Een echte plaatsbepaling vraagt een
+// externe dienst of een grote tabel; de landcode achteraan de hostnaam klopt bij
+// Belgische en Europese providers vrijwel altijd en kost niets.
+const LAND_GEEN = new Set(['io', 'co', 'tv', 'me', 'ai', 'cc', 'ly', 'fm', 'to', 'gg', 'sh', 'st', 'ws']);
+function statsLand(hostnaam) {
+  const h = String(hostnaam || '').toLowerCase().replace(/\.$/, '');
+  if (!h) return null;
+  const laatste = h.split('.').pop();
+  if (!/^[a-z]{2}$/.test(laatste) || LAND_GEEN.has(laatste)) return null;
+  return laatste === 'uk' ? 'GB' : laatste.toUpperCase();
+}
+
 // Eigen en lokale adressen tellen niet mee (testen, gezondheidscontroles van de server).
 function statsEigenIp(ip) {
   return !ip || ip === '::1' || ip === '0:0:0:0::/64' || /^127\./.test(ip) || /^(10\.|192\.168\.|169\.254\.)/.test(ip)
@@ -682,18 +718,21 @@ const statsVastGeheim = (() => {
   return nieuw;
 })();
 
-// Toestelsleutel: onderscheidt browsers binnen hetzelfde adres, blijft stabiel over dagen heen.
+// Toestelsleutel: onderscheidt browsers binnen hetzelfde adres, blijft stabiel over
+// dagen heen. De versienummers gaan eruit, anders wordt elke browserupdate een
+// "nieuw toestel" en telt één laptop na een jaar als een stuk of twaalf.
 function statsToestelId(req, ip) {
+  const ua = String(req.headers['user-agent'] || '').replace(/\d+(\.\d+)+/g, '#').replace(/\d{2,}/g, '#');
   return crypto.createHash('sha256')
-    .update(statsVastGeheim + '|' + (ip || '') + '|' + String(req.headers['user-agent'] || ''))
+    .update(statsVastGeheim + '|' + (ip || '') + '|' + ua)
     .digest('hex').slice(0, 12);
 }
 
 const statsToestelZet = db.prepare(`
-  INSERT INTO stats_toestellen (toestel_id, ip, ua, toestel, eerste_ts, laatste_ts, js)
-  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+  INSERT INTO stats_toestellen (toestel_id, ip, ua, toestel, eerste_ts, laatste_ts, js, ip_volledig)
+  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?)
   ON CONFLICT(toestel_id) DO UPDATE SET laatste_ts = CURRENT_TIMESTAMP, ip = excluded.ip,
-    js = MAX(stats_toestellen.js, excluded.js)`);
+    js = MAX(stats_toestellen.js, excluded.js), ip_volledig = COALESCE(excluded.ip_volledig, stats_toestellen.ip_volledig)`);
 
 // Dagzout voor de bestaande kolom "bezoeker": willekeurig, enkel in het geheugen,
 // wisselt elke dag. Die kolom voedt de teller "unieke bezoekers per dag" en blijft
@@ -790,16 +829,10 @@ const statsInsertEvent = db.prepare(`
   INSERT INTO events (dag, naam, pad, taal, bron, utm_source, utm_medium, utm_campaign, detail, bezoeker, ip, ms, pagina_id, toestel_id)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
-// Millisecondestempel van de client, maar alleen als hij geloofwaardig is.
-function statsMs(waarde) {
-  const m = parseInt(waarde, 10);
-  if (!m || !isFinite(m)) return Date.now();
-  const nu = Date.now();
-  // Meldingen komen binnen seconden aan. Wijkt de klok van de bezoeker meer dan vijf
-  // minuten af, dan is ze niet te vertrouwen en houden we de tijd van de server aan;
-  // anders zou zo'n klok de volgorde van de tijdlijn omgooien.
-  return Math.abs(nu - m) > 300000 ? nu : m;
-}
+// De kolom ms krijgt altijd de tijd van de SERVER, ook voor meldingen uit de pagina.
+// De klok van de bezoeker meenemen leek nauwkeuriger, maar een toestel dat een paar
+// minuten voor- of achterloopt zette zijn klikken dan tussen de verkeerde pagina's.
+// Eén klok voor beide tabellen is belangrijker dan de laatste milliseconde.
 const statsPaginaId = v => (/^[a-z0-9]{4,24}$/i.test(String(v || '')) ? String(v) : null);
 
 // Paginaweergaven: alles wat als HTML met status 200 vertrekt, behalve het
@@ -815,12 +848,14 @@ app.use((req, res, next) => {
       // De nieuwe pagina zelf telt daarna gewoon als weergave (de browser volgt de 301).
       if (res.statusCode === 301 && req.route && typeof OUDE_URLS === 'object'
           && Object.prototype.hasOwnProperty.call(OUDE_URLS, req.route.path)) {
-        if (statsIsBot(req)) return;
+        if (statsIsBot(req) || statsIsPrefetch(req)) return;
+        const oudIp = statsIp(req);
+        if (statsEigenIp(oudIp)) return;
         statsInsertEvent.run(
           statsDag(), 'oude_url', statsKort(pad, 200), 'nl', statsBron(req.get('referer'), req.get('host'), req.headers['user-agent']),
           statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
           statsKort(OUDE_URLS[req.route.path], 120), statsBezoeker(req),
-          statsIp(req), Date.now(), null, statsToestelId(req, statsIp(req))
+          oudIp, Date.now(), null, statsToestelId(req, oudIp)
         );
         return;
       }
@@ -830,7 +865,7 @@ app.use((req, res, next) => {
       // Bij een 304 stuurt Express geen content-type mee, dus leiden we uit het pad af
       // of het om een pagina gaat.
       const isPagina = String(res.getHeader('content-type') || '').includes('text/html')
-        || (res.statusCode === 304 && !/\.[a-z0-9]{2,5}$/i.test(pad));
+        || (res.statusCode === 304 && (/\.html?$/i.test(pad) || !/\.[a-z0-9]{2,5}$/i.test(pad)));
       if (res.statusCode !== 200 && res.statusCode !== 304) return;
       if (!isPagina) return;
       if (/^\/(api|admin|gasten|login|media)(\/|$)/.test(pad) || /^\/(fr|en|de)\/login$/.test(pad)) return;
@@ -839,12 +874,12 @@ app.use((req, res, next) => {
       const bezoekIp = statsIp(req);
       if (statsEigenIp(bezoekIp)) return;
       const bezoekToestel = statsToestelId(req, bezoekIp);
-      try { statsToestelZet.run(bezoekToestel, bezoekIp, statsKort(req.headers['user-agent'], 300), statsToestel(req), 0); } catch (e) { /* stil */ }
+      try { statsToestelZet.run(bezoekToestel, bezoekIp, statsKort(req.headers['user-agent'], 300), statsToestel(req), 0, statsIpVolledig(req)); } catch (e) { /* stil */ }
       statsInsertVisit.run(
         statsDag(), statsKort(pad, 200), statsTaal(pad), statsBron(req.get('referer'), req.get('host'), req.headers['user-agent']),
         statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
         statsToestel(req), statsBezoeker(req),
-        bezoekIp, Date.now(), statsPaginaId(req.query.pid), bezoekToestel
+        bezoekIp, Date.now(), null, bezoekToestel
       );
     } catch (e) { /* statistiek mag nooit een pagina breken */ }
   });
@@ -859,6 +894,27 @@ app.post('/api/telling', (req, res) => {
     if (statsIsBot(req)) return;
     const b = req.body || {};
     const naam = String(b.naam || '');
+
+    // "weergave" is geen gebeurtenis maar een levensteken van de pagina zelf: het
+    // bewijst dat er een browser met JavaScript achter zit. Was de pagina vooraf
+    // opgehaald door de browser (prefetch), dan is ze bij de server niet als bezoek
+    // geteld en gebeurt dat hier alsnog, op het moment dat ze echt getoond wordt.
+    if (naam === 'weergave') {
+      const wIp = statsIp(req);
+      if (statsEigenIp(wIp)) return;
+      const wToestel = statsToestelId(req, wIp);
+      try { statsToestelZet.run(wToestel, wIp, statsKort(req.headers['user-agent'], 300), statsToestel(req), 1, statsIpVolledig(req)); } catch (e) { /* stil */ }
+      if (b.vooraf) {
+        const wPad = statsKort(b.pad, 200) || '/';
+        statsInsertVisit.run(
+          statsDag(), wPad, statsTaal(wPad), statsBron(b.ref, req.get('host'), req.headers['user-agent']),
+          statsKort(b.utm_source), statsKort(b.utm_medium), statsKort(b.utm_campaign),
+          statsToestel(req), statsBezoeker(req), wIp, Date.now(), null, wToestel
+        );
+      }
+      return;
+    }
+
     if (!STATS_EVENTS.has(naam)) return;
     const pad = statsKort(b.pad, 200) || '/';
     const klikIp = statsIp(req);
@@ -866,13 +922,13 @@ app.post('/api/telling', (req, res) => {
     const klikToestel = statsToestelId(req, klikIp);
     // js = 1: dit toestel voert JavaScript uit. Een adres dat tientallen pagina's
     // opvraagt maar nooit een gebeurtenis stuurt, is vrijwel zeker een robot.
-    try { statsToestelZet.run(klikToestel, klikIp, statsKort(req.headers['user-agent'], 300), statsToestel(req), 1); } catch (e) { /* stil */ }
+    try { statsToestelZet.run(klikToestel, klikIp, statsKort(req.headers['user-agent'], 300), statsToestel(req), 1, statsIpVolledig(req)); } catch (e) { /* stil */ }
     statsInsertEvent.run(
       statsDag(), naam, pad, statsTaal(pad),
       statsBron(b.ref, req.get('host'), req.headers['user-agent']),
       statsKort(b.utm_source), statsKort(b.utm_medium), statsKort(b.utm_campaign),
       statsKort(b.detail, 120), statsBezoeker(req),
-      klikIp, statsMs(b.ms), statsPaginaId(b.pid), klikToestel
+      klikIp, Date.now(), statsPaginaId(b.pid), klikToestel
     );
   } catch (e) { /* stil */ }
 });
@@ -967,13 +1023,26 @@ const bezoekerNaamZet = db.prepare(`
   INSERT INTO bezoeker_ip (ip, hostnaam, hostnaam_ts) VALUES (?, ?, CURRENT_TIMESTAMP)
   ON CONFLICT(ip) DO UPDATE SET hostnaam = excluded.hostnaam, hostnaam_ts = excluded.hostnaam_ts`);
 const dnsBezig = new Set();
+// Voor een IPv6-net (.../64) kan niet opgezocht worden; daarvoor nemen we een
+// volledig adres dat we van een toestel achter dat net bewaard hebben.
+const dnsVolledigAdres = db.prepare(`SELECT ip_volledig FROM stats_toestellen
+  WHERE ip = ? AND ip_volledig IS NOT NULL ORDER BY laatste_ts DESC LIMIT 1`);
+// Geeft terug of er werkelijk een opzoeking gestart is, zodat het budget hieronder
+// niet opgaat aan adressen waarvoor niets te doen valt.
 function dnsOpzoeken(ip) {
-  if (!ip || dnsBezig.has(ip) || ip.includes('/')) return;   // IPv6-net kan niet opgezocht worden
+  if (!ip || dnsBezig.has(ip)) return false;
+  let adres = ip;
+  if (ip.includes('/')) {
+    const rij = dnsVolledigAdres.get(ip);
+    if (!rij || !rij.ip_volledig) { try { bezoekerNaamZet.run(ip, ''); } catch (e) { /* stil */ } return false; }
+    adres = rij.ip_volledig;
+  }
   dnsBezig.add(ip);
-  dnsOmgekeerd(ip)
+  dnsOmgekeerd(adres)
     .then(namen => bezoekerNaamZet.run(ip, statsKort(namen && namen[0], 200) || ''))
     .catch(() => { try { bezoekerNaamZet.run(ip, ''); } catch (e) { /* stil */ } })
     .finally(() => dnsBezig.delete(ip));
+  return true;
 }
 
 function bezoekerPeriode(req) {
@@ -985,9 +1054,18 @@ function bezoekerPeriode(req) {
   };
 }
 
+// De volgorde wordt in de database bepaald, niet pas in de browser: anders kapt de
+// bovengrens van 500 net de bezoekers weg waarop gesorteerd wordt.
+const BEZOEKER_SORT = {
+  laatste: 'MAX(ts) DESC',
+  dagen: 'COUNT(DISTINCT dag) DESC, MAX(ts) DESC',
+  weergaven: 'COUNT(*) DESC, MAX(ts) DESC',
+};
+
 app.get('/api/admin/bezoekers-ip', authMiddleware('admin'), (req, res) => {
   const { dagen, van, tot } = bezoekerPeriode(req);
   const all = (sql, ...p) => db.prepare(sql).all(...p);
+  const volgorde = BEZOEKER_SORT[String(req.query.sort || '')] || BEZOEKER_SORT.laatste;
 
   const rijen = all(`
     SELECT ip,
@@ -998,7 +1076,7 @@ app.get('/api/admin/bezoekers-ip', authMiddleware('admin'), (req, res) => {
            MIN(ts) AS eerste,
            MAX(ts) AS laatste
     FROM visits WHERE ip IS NOT NULL AND dag >= ? AND dag <= ?
-    GROUP BY ip ORDER BY MAX(ts) DESC LIMIT 500`, van, tot);
+    GROUP BY ip ORDER BY ${volgorde} LIMIT 500`, van, tot);
 
   const perIp = new Map(rijen.map(r => [r.ip, { ...r, klikken: 0, leads: 0, gebeurtenissen: {} }]));
 
@@ -1029,12 +1107,25 @@ app.get('/api/admin/bezoekers-ip', authMiddleware('admin'), (req, res) => {
 
   // Toestellen, browsers en de vraag of dit adres ooit JavaScript uitvoerde.
   const toestelInfo = {};
-  all('SELECT ip, ua, toestel, js FROM stats_toestellen WHERE ip IS NOT NULL')
+  // Enkel de adressen die in de lijst staan, en enkel toestellen die in de periode
+  // gezien zijn: anders wordt de hele tabel ingelezen voor gegevens die niemand ziet.
+  const ipLijst = rijen.map(r => r.ip);
+  const gaten = ipLijst.map(() => '?').join(',');
+  all(ipLijst.length
+    ? `SELECT ip, ua, toestel, js, laatste_ts FROM stats_toestellen
+       WHERE ip IN (${gaten}) AND laatste_ts >= ? ORDER BY laatste_ts ASC`
+    : 'SELECT ip, ua, toestel, js, laatste_ts FROM stats_toestellen WHERE 0',
+    ...(ipLijst.length ? [...ipLijst, van + ' 00:00:00'] : []))
     .forEach(r => {
-      const t = toestelInfo[r.ip] || (toestelInfo[r.ip] = { js: 0, soorten: new Set(), uas: [] });
+      const t = toestelInfo[r.ip] || (toestelInfo[r.ip] = { js: 0, soorten: new Set(), browsers: new Set(), ua: null });
       t.js = Math.max(t.js, r.js || 0);
-      if (r.toestel) t.soorten.add(r.toestel);
-      if (r.ua) t.uas.push(r.ua);
+      if (r.ua) {
+        t.soorten.add(statsToestelSoort(r.ua));
+        t.browsers.add(duidUseragent(r.ua));
+        t.ua = r.ua;                                  // het laatst gebruikte toestel
+      } else if (r.toestel) {
+        t.soorten.add(r.toestel === 'mobiel' ? 'telefoon' : 'desktop');
+      }
     });
 
   const labels = {};
@@ -1045,7 +1136,7 @@ app.get('/api/admin/bezoekers-ip', authMiddleware('admin'), (req, res) => {
   for (const r of rijen) {
     if (opgezocht >= 12) break;
     if (labels[r.ip] && labels[r.ip].hostnaam !== null && labels[r.ip].hostnaam !== undefined) continue;
-    dnsOpzoeken(r.ip); opgezocht++;
+    if (dnsOpzoeken(r.ip)) opgezocht++;
   }
 
   const bezoekers = [...perIp.values()].map(b => {
@@ -1070,10 +1161,16 @@ app.get('/api/admin/bezoekers-ip', authMiddleware('admin'), (req, res) => {
       landing: b.landing || null,
       bron: b.eersteBron || null,
       soort: [...t.soorten].join(' + ') || null,
+      soorten: [...t.soorten],
+      browser: [...t.browsers][t.browsers.size - 1] || null,
+      browsers: [...t.browsers],
+      ua: t.ua || null,
+      land: statsLand(label.hostnaam),
       js: !!t.js,
-      // Geen enkele gebeurtenis ooit terwijl er wel veel pagina's opgevraagd zijn:
-      // dat patroon hoort bij robots die door de user-agentfilter glippen.
-      botverdacht: !t.js && b.weergaven >= 8,
+      // Geen enkele pagina heeft ooit een levensteken gestuurd terwijl er wel veel
+      // opgevraagd zijn: dat patroon hoort bij robots die door de user-agentfilter
+      // glippen. Een gewone bezoeker stuurt dat levensteken bij elke pagina.
+      botverdacht: !t.js && b.weergaven >= 5,
       snel: minuten >= 0 && b.weergaven >= 15 && minuten < 3,
     };
   });
@@ -1101,7 +1198,7 @@ app.get('/api/admin/bezoeker-ip', authMiddleware('admin'), (req, res) => {
     SELECT 'klik' AS soort, ts, COALESCE(ms, strftime('%s', ts) * 1000) AS ms, dag, pad, taal, bron, toestel_id,
            naam, detail, NULL AS toestel
     FROM events WHERE ip = ? AND dag >= ? AND dag <= ?
-    ORDER BY ms ASC, ts ASC LIMIT 3000`, ip, van, tot, ip, van, tot);
+    ORDER BY ms DESC, ts DESC LIMIT 3000`, ip, van, tot, ip, van, tot).reverse();
 
   const toestellen = all('SELECT toestel_id, ua, toestel, eerste_ts, laatste_ts, js FROM stats_toestellen WHERE ip = ? ORDER BY laatste_ts DESC', ip);
   const label = db.prepare('SELECT * FROM bezoeker_ip WHERE ip = ?').get(ip) || {};

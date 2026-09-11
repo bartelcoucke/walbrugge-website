@@ -342,11 +342,8 @@
     // netwerk wisselde.
     pid: Math.random().toString(36).slice(2, 12)
   };
-  function stuur(naam, detail) {
-    // ms: het tijdstip bij de bezoeker. De server bewaart tijden per seconde, waardoor
-    // een klik en een paginaweergave in dezelfde seconde anders in willekeurige
-    // volgorde in de tijdlijn belanden.
-    var body = JSON.stringify(Object.assign({ naam: naam, detail: detail || '', ms: Date.now() }, basis));
+  function stuur(naam, detail, extra) {
+    var body = JSON.stringify(Object.assign({ naam: naam, detail: detail || '' }, basis, extra || {}));
     try {
       if (navigator.sendBeacon && navigator.sendBeacon('/api/telling', new Blob([body], { type: 'application/json' }))) return;
     } catch (e) { /* val terug op fetch */ }
@@ -355,6 +352,19 @@
         .catch(function () {});
     } catch (e) { /* stil */ }
   }
+  // Eén levensteken per paginabezoek. Daaraan ziet de server dat er een echte browser
+  // achter zit (een robot stuurt dit nooit). Haalde de browser de pagina vooraf op en
+  // toont ze die nu pas, dan is het bezoek bij de server nog niet geteld; met de vlag
+  // "vooraf" gebeurt dat alsnog, op het moment dat de bezoeker de pagina echt ziet.
+  (function () {
+    var vooraf = false;
+    try {
+      var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      vooraf = !!(nav && nav.activationStart > 0);
+    } catch (e) { /* oudere browser */ }
+    stuur('weergave', '', { vooraf: vooraf });
+  })();
+
   var tekst = function (a) { return (a.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60); };
 
   // Fotocarrousels: de pijltjes en bolletjes van de zaaltegels (teams), de

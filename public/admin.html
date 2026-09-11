@@ -117,6 +117,11 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
 .bzip-vlag.lead { background: #fff3e0; color: #ef6c00; }
 .bzip-vlag.bot { background: #eceff1; color: #607d8b; }
 .bzip-vlag.eigen { background: #ede7f6; color: #5e35b1; }
+.bzip-vlag-land { font-size: 1.05rem; line-height: 1; margin-right: 5px; vertical-align: -1px; }
+.bzip-icoon { width: 15px; height: 15px; vertical-align: -2px; margin-right: 5px; color: var(--muted); flex: none; }
+.bzip-toestel { display: flex; align-items: flex-start; gap: 0; font-size: 0.86rem; }
+.bzip-toestel small { display: block; color: var(--muted); font-size: 0.76rem; }
+.bzip-verwijzer small { display: block; color: var(--muted); font-size: 0.76rem; }
 .bzip-detail > td { background: #fbf9f6; padding: 0 16px 18px; }
 .bzip-dossier { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding-top: 14px; }
 .bzip-dossier h4 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 8px; }
@@ -626,7 +631,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             <h2>Individuele bezoekers per IP-adres</h2>
             <div class="bzip-balk">
               <input type="search" id="bzIpZoek" placeholder="Zoek adres, naam of notitie…" oninput="bzIpTeken()">
-              <select id="bzIpSort" onchange="bzIpTeken()">
+              <select id="bzIpSort" onchange="loadBezoekersIp()">
                 <option value="laatste">Laatst gezien</option>
                 <option value="dagen">Meeste dagen</option>
                 <option value="weergaven">Meeste pagina's</option>
@@ -644,6 +649,8 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             en welke knoppen het gebruikte. Let op: achter één adres kunnen meerdere mensen zitten
             (gezin, kantoor, mobiel netwerk) en wie mobiel surft, krijgt geregeld een ander adres.
             Met "Dit ben ik zelf" verberg je je eigen adres uit de lijst.
+            Het vlagje komt uit de naam van de provider (bijvoorbeeld <em>telenet.be</em> geeft België);
+            staat er geen vlagje, dan gaf het adres geen naam prijs.
           </p>
           <div id="bzIpMelding" class="bzip-melding"></div>
           <div class="tabel-schuif">
@@ -654,8 +661,8 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
                   <th style="text-align:right;">Dagen</th>
                   <th style="text-align:right;">Pagina's</th>
                   <th style="text-align:right;">Klikken</th>
-                  <th>Eerste bron</th>
-                  <th>Toestel</th>
+                  <th>Verwijzer</th>
+                  <th>Toestel en browser</th>
                   <th>Laatst gezien</th>
                 </tr>
               </thead>
@@ -1268,6 +1275,12 @@ function renderLogReferrals() {
 // ═══ Individuele bezoekers per IP-adres ═══════════════════════════════════
 let bzIpData = [];
 const bzIpOpen = new Set();
+const bzIpCache = new Map();          // ip -> opgebouwde dossier-HTML
+
+// De velden in een dossier mogen de rij eronder niet mee openklappen of sluiten.
+function bzIpKoppelKlikken(rij) {
+  rij.querySelectorAll('input, button, .bzip-vak').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
+}
 
 const bzIpTijd = (ts, metDatum) => {
   const d = new Date(String(ts || '').replace(' ', 'T') + 'Z');
@@ -1290,7 +1303,9 @@ async function loadBezoekersIp() {
   const dagen = document.getElementById('bezoekersDagen').value;
   const tbody = document.getElementById('bzIpLijst');
   tbody.innerHTML = '<tr><td colspan="7" class="empty">Laden…</td></tr>';
-  const data = await api('/admin/bezoekers-ip?dagen=' + dagen);
+  const sort = (document.getElementById('bzIpSort') || {}).value || 'laatste';
+  bzIpCache.clear();
+  const data = await api('/admin/bezoekers-ip?dagen=' + dagen + '&sort=' + encodeURIComponent(sort === 'klikken' ? 'laatste' : sort));
   if (!data.ok) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Kon de lijst niet laden</td></tr>'; return; }
   bzIpData = data.bezoekers;
   const melding = document.getElementById('bzIpMelding');
@@ -1330,24 +1345,61 @@ function bzIpTeken() {
       + (b.botverdacht ? '<span class="bzip-vlag bot">robot?</span>' : '');
     return `
       <tr class="bzip-rij${open ? ' open' : ''}" onclick="bzIpKlap('${esc(b.ip)}')">
-        <td><span class="bzip-pijl">▸</span>
+        <td><span class="bzip-pijl">▸</span>${bzIpVlag(b.land)}
             ${b.naam ? '<span class="bzip-naam">' + esc(b.naam) + '</span> ' : ''}
             <span class="bzip-adres">${esc(b.ip)}${b.hostnaam ? '<span class="bzip-host">' + esc(b.hostnaam) + '</span>' : ''}</span>${vlaggen}</td>
         <td style="text-align:right;">${b.dagen}</td>
         <td style="text-align:right;">${nb(b.weergaven)}<` + `br><small style="color:#999;">${b.paginas} versch.</small></td>
         <td style="text-align:right;">${b.klikken ? nb(b.klikken) : '–'}</td>
-        <td>${b.bron ? esc(b.bron) : '<em style="color:#999;">rechtstreeks</em>'}</td>
-        <td>${esc(b.soort || '')}${b.toestellen > 1 ? ' <small style="color:#999;">(' + b.toestellen + ' toestellen)</small>' : ''}</td>
+        <td class="bzip-verwijzer">${b.bron ? esc(b.bron) : '<em style="color:#999;">rechtstreeks</em>'}${b.landing ? '<small>kwam binnen op ' + esc(bzIpPad(b.landing)) + '</small>' : ''}</td>
+        <td>${bzIpToestel(b)}</td>
         <td style="white-space:nowrap;">${bzIpTijd(b.laatste, true)}</td>
       </tr>
       <tr class="bzip-detail" id="bzipd_${bzIpSleutel(b.ip)}" style="${open ? '' : 'display:none;'}"><td colspan="7"></td></tr>`;
   }).join('');
 
-  // Reeds geopende dossiers opnieuw invullen
-  lijst.filter(b => bzIpOpen.has(b.ip)).forEach(b => bzIpDossier(b.ip));
+  // Reeds geopende dossiers meteen terugzetten uit wat al opgehaald was; enkel wie
+  // nog niets heeft, wordt bij de server opgevraagd. Anders zou elke toetsaanslag in
+  // het zoekveld alle open dossiers opnieuw ophalen en intussen leegmaken.
+  lijst.filter(b => bzIpOpen.has(b.ip)).forEach(b => {
+    const rij = document.getElementById('bzipd_' + bzIpSleutel(b.ip));
+    if (!rij) return;
+    if (bzIpCache.has(b.ip)) { rij.querySelector('td').innerHTML = bzIpCache.get(b.ip); bzIpKoppelKlikken(rij); }
+    else bzIpDossier(b.ip);
+  });
 }
 
 const bzIpSleutel = ip => ip.replace(/[^a-z0-9]/gi, '_');
+
+// Landcode naar vlagje: twee letters worden twee regionale aanduidingstekens.
+function bzIpVlag(code) {
+  if (!/^[A-Z]{2}$/.test(String(code || ''))) return '';
+  const tekens = [...code].map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('');
+  return '<span class="bzip-vlag-land" title="' + esc(BZIP_LAND[code] || code) + '">' + tekens + '</span>';
+}
+const BZIP_LAND = { BE: 'België', NL: 'Nederland', FR: 'Frankrijk', DE: 'Duitsland', GB: 'Verenigd Koninkrijk',
+  LU: 'Luxemburg', ES: 'Spanje', IT: 'Italië', PT: 'Portugal', PL: 'Polen', AT: 'Oostenrijk', CH: 'Zwitserland',
+  DK: 'Denemarken', SE: 'Zweden', NO: 'Noorwegen', FI: 'Finland', IE: 'Ierland', CZ: 'Tsjechië', RO: 'Roemenië',
+  US: 'Verenigde Staten', CA: 'Canada', MA: 'Marokko', TR: 'Turkije', RU: 'Rusland', CN: 'China', JP: 'Japan' };
+
+// Kleine tekeningen voor het soort toestel.
+const BZIP_ICOON = {
+  desktop: '<svg class="bzip-icoon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="1" y="2" width="14" height="9" rx="1"/><path d="M6 14h4M8 11v3"/></svg>',
+  telefoon: '<svg class="bzip-icoon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="4.5" y="1" width="7" height="14" rx="1.4"/><path d="M7 12.8h2"/></svg>',
+  tablet: '<svg class="bzip-icoon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="1" width="11" height="14" rx="1.3"/><path d="M7 12.9h2"/></svg>',
+};
+const BZIP_SOORT_NAAM = { desktop: 'computer', telefoon: 'telefoon', tablet: 'tablet' };
+function bzIpToestel(b) {
+  const soorten = (b.soorten && b.soorten.length ? b.soorten : (b.soort ? [b.soort] : []));
+  const iconen = soorten.map(so => BZIP_ICOON[so] || BZIP_ICOON.desktop).join('');
+  const namen = soorten.map(so => BZIP_SOORT_NAAM[so] || so).join(' + ');
+  if (!soorten.length && !b.browser) return '';
+  // Het toestelwoord alleen als het iets toevoegt: 'Safari · iPad' zegt al genoeg,
+  // 'computer + telefoon' bij meerdere toestellen achter hetzelfde adres niet.
+  const extra = (soorten.length > 1 ? namen : '') + (b.toestellen > 1 ? (soorten.length > 1 ? ' · ' : '') + b.toestellen + ' toestellen' : '');
+  return '<span class="bzip-toestel" title="' + esc(b.ua || '') + '">' + iconen +
+    '<span>' + esc(b.browser || namen) + (extra ? '<small>' + esc(extra) + '</small>' : '') + '</span></span>';
+}
 
 function bzIpKlap(ip) {
   const rij = document.getElementById('bzipd_' + bzIpSleutel(ip));
@@ -1360,8 +1412,8 @@ function bzIpKlap(ip) {
     bzIpOpen.add(ip);
     rij.style.display = '';
     rij.previousElementSibling.classList.add('open');
-    rij.querySelector('td').innerHTML = '<div style="padding:14px 0;color:#999;">Laden…</div>';
-    bzIpDossier(ip);
+    if (bzIpCache.has(ip)) { rij.querySelector('td').innerHTML = bzIpCache.get(ip); bzIpKoppelKlikken(rij); }
+    else { rij.querySelector('td').innerHTML = '<div style="padding:14px 0;color:#999;">Laden…</div>'; bzIpDossier(ip); }
   }
 }
 
@@ -1451,7 +1503,8 @@ async function bzIpDossier(ip) {
                 r => esc(bzIpTijd(r.laatste_ts, true))) + '</div>' : ''}
     </div>`;
 
-  cel.querySelectorAll('input, button, .bzip-vak').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
+  bzIpCache.set(ip, cel.innerHTML);
+  bzIpKoppelKlikken(cel);
 }
 
 async function bzIpBewaar(ip) {
@@ -1466,6 +1519,7 @@ async function bzIpBewaar(ip) {
   if (!d.ok) { alert(d.error || 'Bewaren mislukt'); return; }
   const b = bzIpData.find(x => x.ip === ip);
   if (b) { b.naam = body.naam; b.notitie = body.notitie; b.verborgen = body.verborgen; }
+  bzIpCache.delete(ip);
   bzIpTeken();
 }
 
