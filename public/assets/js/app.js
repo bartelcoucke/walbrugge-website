@@ -324,8 +324,8 @@
  * Stuurt enkele gebeurtenissen naar /api/telling: klik op de offerteknop,
  * offerte verstuurd, WhatsApp/Messenger/telefoon/e-mail, Boek B&B, klik op
  * een zaal, bladeren in een fotocarrousel, klik op een award of reviewlink.
- * Er wordt niets op het toestel bewaard; de server slaat geen IP of
- * user-agent op.
+ * Er wordt niets op het toestel bewaard. De server noteert bij elke melding wel
+ * het IP-adres, zodat het beheer terugkerende bezoekers kan herkennen.
  */
 (function () {
   var q = new URLSearchParams(location.search);
@@ -336,10 +336,17 @@
     ref: (document.referrer || '').slice(0, 300),
     utm_source: q.get('utm_source') || '',
     utm_medium: q.get('utm_medium') || '',
-    utm_campaign: q.get('utm_campaign') || ''
+    utm_campaign: q.get('utm_campaign') || '',
+    // Sleutel per paginabezoek: zo weet de server dat meerdere klikken bij hetzelfde
+    // bezoek horen, ook als een melding later aankomt of het toestel intussen van
+    // netwerk wisselde.
+    pid: Math.random().toString(36).slice(2, 12)
   };
   function stuur(naam, detail) {
-    var body = JSON.stringify(Object.assign({ naam: naam, detail: detail || '' }, basis));
+    // ms: het tijdstip bij de bezoeker. De server bewaart tijden per seconde, waardoor
+    // een klik en een paginaweergave in dezelfde seconde anders in willekeurige
+    // volgorde in de tijdlijn belanden.
+    var body = JSON.stringify(Object.assign({ naam: naam, detail: detail || '', ms: Date.now() }, basis));
     try {
       if (navigator.sendBeacon && navigator.sendBeacon('/api/telling', new Blob([body], { type: 'application/json' }))) return;
     } catch (e) { /* val terug op fetch */ }

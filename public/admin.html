@@ -95,6 +95,48 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
 .aanvraag-acties { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 24px 24px; }
 .aanvraag-acties .btn { text-decoration: none; }
 @media (max-width: 600px) { .aanvraag-rij { grid-template-columns: 1fr; gap: 2px; } }
+/* Individuele bezoekers per IP-adres */
+.bzip-uitleg { margin: 0 0 14px; color: #666; font-size: 0.9rem; line-height: 1.55; }
+.bzip-balk { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.bzip-balk select, .bzip-balk input[type=search] { padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; }
+.bzip-balk label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; }
+.bzip-melding { font-size: 0.85rem; color: var(--muted); margin-bottom: 10px; }
+.bzip-melding.waarschuwing { color: #ef6c00; }
+.bzip-tabel { width: 100%; }
+.bzip-rij { cursor: pointer; }
+.bzip-rij:hover { background: #faf7f2; }
+.bzip-rij.open { background: #f5f1eb; }
+.bzip-rij td { vertical-align: top; }
+.bzip-adres { font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; font-size: 0.86rem; }
+.bzip-host { display: block; color: var(--muted); font-size: 0.76rem; font-family: inherit; }
+.bzip-naam { font-weight: 600; }
+.bzip-pijl { display: inline-block; width: 14px; color: var(--muted); transition: transform 0.15s; }
+.bzip-rij.open .bzip-pijl { transform: rotate(90deg); }
+.bzip-vlag { display: inline-block; font-size: 0.7rem; padding: 2px 7px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+.bzip-vlag.terug { background: #e8f5e9; color: #2e7d32; }
+.bzip-vlag.lead { background: #fff3e0; color: #ef6c00; }
+.bzip-vlag.bot { background: #eceff1; color: #607d8b; }
+.bzip-vlag.eigen { background: #ede7f6; color: #5e35b1; }
+.bzip-detail > td { background: #fbf9f6; padding: 0 16px 18px; }
+.bzip-dossier { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding-top: 14px; }
+.bzip-dossier h4 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 8px; }
+.bzip-vak { background: #fff; border: 1px solid #eee5da; border-radius: 8px; padding: 12px 14px; }
+.bzip-vak.breed { grid-column: 1 / -1; }
+.bzip-lijstje { list-style: none; margin: 0; padding: 0; font-size: 0.88rem; }
+.bzip-lijstje li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px solid #f3ede5; }
+.bzip-lijstje li:last-child { border-bottom: none; }
+.bzip-lijstje span.aantal { color: var(--muted); white-space: nowrap; }
+.bzip-sessie { margin-bottom: 14px; }
+.bzip-sessie-kop { font-size: 0.82rem; color: var(--green-dark); font-weight: 600; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #eee5da; }
+.bzip-stap { display: grid; grid-template-columns: 58px 1fr; gap: 10px; font-size: 0.87rem; padding: 3px 0; }
+.bzip-stap .tijd { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.8rem; padding-top: 1px; }
+.bzip-stap.klik .wat { color: #8d6e00; }
+.bzip-stap .wat .pijl { color: var(--muted); }
+.bzip-route { font-size: 0.82rem; color: var(--muted); margin-top: 4px; word-break: break-word; }
+.bzip-notitie { display: grid; grid-template-columns: 160px 1fr auto; gap: 10px; align-items: center; }
+.bzip-notitie input[type=text] { width: 100%; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; }
+.bzip-aanvraag { background: #e8f5e9; border-radius: 6px; padding: 8px 10px; font-size: 0.87rem; margin-bottom: 6px; }
+@media (max-width: 900px) { .bzip-dossier { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -304,7 +346,8 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             geroteerde logbestanden — zo veel geschiedenis als er nog op de server staat.
             Alleen paginaweergaven tellen mee (geen afbeeldingen of scripts). Er wordt niets
             bewaard: het logboek wordt bij het openen gelezen; het resultaat blijft tien minuten
-            in het geheugen, "Vernieuwen" leest het opnieuw. IP-adressen worden niet gebruikt.
+            in het geheugen, "Vernieuwen" leest het opnieuw. Deze lijst telt enkel verwijzers en
+            browsers; bezoekers per IP-adres staan in het tabblad Bezoekers.
           </p>
           <p id="lrInfo" style="margin:10px 0 0;color:#666;font-size:0.85rem;"></p>
         </div>
@@ -494,7 +537,7 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
           <div class="card-header">
             <h2>Bezoekers</h2>
             <div style="display:flex;gap:8px;align-items:center;">
-              <select id="bezoekersDagen" onchange="loadBezoekers()"
+              <select id="bezoekersDagen" onchange="loadBezoekers(); loadBezoekersIp();"
                 style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;">
                 <option value="7">Laatste 7 dagen</option>
                 <option value="30" selected>Laatste 30 dagen</option>
@@ -508,9 +551,9 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             </div>
           </div>
           <p style="margin:0 0 12px;color:#666;font-size:0.9rem;">
-            Geteld op de server, voor álle bezoekers — ook wie de cookies weigert. Er wordt geen
-            IP-adres of browserkenmerk bewaard; "unieke bezoekers" zijn een schatting per dag.
-            Zoekrobots worden niet meegeteld. Klikken vanuit apps worden herkend waar dat kan
+            Geteld op de server, voor álle bezoekers — ook wie de cookies weigert. "Unieke bezoekers"
+            zijn een schatting per dag. Het IP-adres wordt bewaard en is enkel hier zichtbaar; de lijst
+            met individuele bezoekers staat onderaan dit tabblad. Zoekrobots worden niet meegeteld. Klikken vanuit apps worden herkend waar dat kan
             (Android-apps zoals WhatsApp en Gmail; de Facebook-, Instagram-, Messenger- en
             LinkedIn-app op alle toestellen). Klikken op een iPhone vanuit WhatsApp, iMessage of
             Apple Mail geven niets prijs en tellen als "rechtstreeks / onbekend" — gebruik voor
@@ -576,6 +619,49 @@ th { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-
             <thead><tr><th>Dag</th><th style="text-align:right;">Weergaven</th><th style="text-align:right;">Bezoekers</th><th style="text-align:right;">Offertes</th><th style="width:40%;"></th></tr></thead>
             <tbody id="bzPerDag"><tr><td colspan="5" class="empty">Laden…</td></tr></tbody>
           </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Individuele bezoekers per IP-adres</h2>
+            <div class="bzip-balk">
+              <input type="search" id="bzIpZoek" placeholder="Zoek adres, naam of notitie…" oninput="bzIpTeken()">
+              <select id="bzIpSort" onchange="bzIpTeken()">
+                <option value="laatste">Laatst gezien</option>
+                <option value="dagen">Meeste dagen</option>
+                <option value="weergaven">Meeste pagina's</option>
+                <option value="klikken">Meeste klikken</option>
+              </select>
+              <label><input type="checkbox" id="bzIpTerug" onchange="bzIpTeken()"> alleen terugkerend</label>
+              <label><input type="checkbox" id="bzIpVerborgen" onchange="bzIpTeken()"> verborgen tonen</label>
+              <button class="btn btn-outline btn-sm" onclick="loadBezoekersIp()">Vernieuwen</button>
+            </div>
+          </div>
+          <p class="bzip-uitleg">
+            Eén regel per IP-adres, met de periode die je bovenaan koos. Klik op een regel om het
+            volledige dossier te zien: op welke dagen dit adres langskwam, via welke bron het de eerste
+            keer binnenkwam, welke pagina's het in welke volgorde bezocht, op welke carrousels het klikte
+            en welke knoppen het gebruikte. Let op: achter één adres kunnen meerdere mensen zitten
+            (gezin, kantoor, mobiel netwerk) en wie mobiel surft, krijgt geregeld een ander adres.
+            Met "Dit ben ik zelf" verberg je je eigen adres uit de lijst.
+          </p>
+          <div id="bzIpMelding" class="bzip-melding"></div>
+          <div class="tabel-schuif">
+            <table class="bzip-tabel">
+              <thead>
+                <tr>
+                  <th>Adres</th>
+                  <th style="text-align:right;">Dagen</th>
+                  <th style="text-align:right;">Pagina's</th>
+                  <th style="text-align:right;">Klikken</th>
+                  <th>Eerste bron</th>
+                  <th>Toestel</th>
+                  <th>Laatst gezien</th>
+                </tr>
+              </thead>
+              <tbody id="bzIpLijst"><tr><td colspan="7" class="empty">Laden…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -1179,6 +1265,210 @@ function renderLogReferrals() {
     : leeg(3, zoek ? 'Niets gevonden' : 'Geen gegevens');
 }
 
+// ═══ Individuele bezoekers per IP-adres ═══════════════════════════════════
+let bzIpData = [];
+const bzIpOpen = new Set();
+
+const bzIpTijd = (ts, metDatum) => {
+  const d = new Date(String(ts || '').replace(' ', 'T') + 'Z');
+  if (isNaN(d)) return '';
+  return metDatum
+    ? d.toLocaleString('nl-BE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    : d.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
+};
+const bzIpDag = dag => new Date(dag + 'T12:00:00').toLocaleDateString('nl-BE', { weekday: 'short', day: 'numeric', month: 'short' });
+
+// Pad leesbaar maken, ook voor de andere talen
+function bzIpPad(p) {
+  const m = /^\/(fr|en|de)(\/.*)?$/.exec(p || '');
+  const kern = m ? (m[2] || '/') : (p || '/');
+  const naam = paginaNaam(kern);
+  return m ? naam + ' (' + m[1].toUpperCase() + ')' : naam;
+}
+
+async function loadBezoekersIp() {
+  const dagen = document.getElementById('bezoekersDagen').value;
+  const tbody = document.getElementById('bzIpLijst');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty">Laden…</td></tr>';
+  const data = await api('/admin/bezoekers-ip?dagen=' + dagen);
+  if (!data.ok) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Kon de lijst niet laden</td></tr>'; return; }
+  bzIpData = data.bezoekers;
+  const melding = document.getElementById('bzIpMelding');
+  const stukjes = [];
+  if (data.sinds) stukjes.push('Individuele bezoekers worden bijgehouden sinds ' + bzIpDag(data.sinds) + '.');
+  if (data.zonderIp) stukjes.push(nb(data.zonderIp) + ' oudere weergaven zonder adres tellen wel mee in de totalen hierboven.');
+  if (data.afgekapt) stukjes.push('Alleen de 500 recentste adressen worden getoond.');
+  melding.textContent = stukjes.join(' ');
+  bzIpTeken();
+}
+
+function bzIpTeken() {
+  const zoek = (document.getElementById('bzIpZoek').value || '').toLowerCase();
+  const sort = document.getElementById('bzIpSort').value;
+  const alleenTerug = document.getElementById('bzIpTerug').checked;
+  const toonVerborgen = document.getElementById('bzIpVerborgen').checked;
+
+  let lijst = bzIpData.filter(b => {
+    if (b.verborgen && !toonVerborgen) return false;
+    if (alleenTerug && b.dagen < 2) return false;
+    if (!zoek) return true;
+    return (b.ip + ' ' + (b.naam || '') + ' ' + (b.notitie || '') + ' ' + (b.hostnaam || '')).toLowerCase().includes(zoek);
+  });
+  lijst.sort((a, b) => sort === 'dagen' ? b.dagen - a.dagen
+    : sort === 'weergaven' ? b.weergaven - a.weergaven
+    : sort === 'klikken' ? b.klikken - a.klikken
+    : String(b.laatste).localeCompare(String(a.laatste)));
+
+  const tbody = document.getElementById('bzIpLijst');
+  if (!lijst.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">Geen bezoekers die aan de keuze voldoen</td></tr>'; return; }
+
+  tbody.innerHTML = lijst.map(b => {
+    const open = bzIpOpen.has(b.ip);
+    const vlaggen = (b.dagen >= 2 ? '<span class="bzip-vlag terug">terugkerend</span>' : '')
+      + (b.leads ? '<span class="bzip-vlag lead">offerte</span>' : '')
+      + (b.verborgen ? '<span class="bzip-vlag eigen">eigen</span>' : '')
+      + (b.botverdacht ? '<span class="bzip-vlag bot">robot?</span>' : '');
+    return `
+      <tr class="bzip-rij${open ? ' open' : ''}" onclick="bzIpKlap('${esc(b.ip)}')">
+        <td><span class="bzip-pijl">▸</span>
+            ${b.naam ? '<span class="bzip-naam">' + esc(b.naam) + '</span> ' : ''}
+            <span class="bzip-adres">${esc(b.ip)}${b.hostnaam ? '<span class="bzip-host">' + esc(b.hostnaam) + '</span>' : ''}</span>${vlaggen}</td>
+        <td style="text-align:right;">${b.dagen}</td>
+        <td style="text-align:right;">${nb(b.weergaven)}<` + `br><small style="color:#999;">${b.paginas} versch.</small></td>
+        <td style="text-align:right;">${b.klikken ? nb(b.klikken) : '–'}</td>
+        <td>${b.bron ? esc(b.bron) : '<em style="color:#999;">rechtstreeks</em>'}</td>
+        <td>${esc(b.soort || '')}${b.toestellen > 1 ? ' <small style="color:#999;">(' + b.toestellen + ' toestellen)</small>' : ''}</td>
+        <td style="white-space:nowrap;">${bzIpTijd(b.laatste, true)}</td>
+      </tr>
+      <tr class="bzip-detail" id="bzipd_${bzIpSleutel(b.ip)}" style="${open ? '' : 'display:none;'}"><td colspan="7"></td></tr>`;
+  }).join('');
+
+  // Reeds geopende dossiers opnieuw invullen
+  lijst.filter(b => bzIpOpen.has(b.ip)).forEach(b => bzIpDossier(b.ip));
+}
+
+const bzIpSleutel = ip => ip.replace(/[^a-z0-9]/gi, '_');
+
+function bzIpKlap(ip) {
+  const rij = document.getElementById('bzipd_' + bzIpSleutel(ip));
+  if (!rij) return;
+  if (bzIpOpen.has(ip)) {
+    bzIpOpen.delete(ip);
+    rij.style.display = 'none';
+    rij.previousElementSibling.classList.remove('open');
+  } else {
+    bzIpOpen.add(ip);
+    rij.style.display = '';
+    rij.previousElementSibling.classList.add('open');
+    rij.querySelector('td').innerHTML = '<div style="padding:14px 0;color:#999;">Laden…</div>';
+    bzIpDossier(ip);
+  }
+}
+
+async function bzIpDossier(ip) {
+  const rij = document.getElementById('bzipd_' + bzIpSleutel(ip));
+  if (!rij) return;
+  const dagen = document.getElementById('bezoekersDagen').value;
+  const d = await api('/admin/bezoeker-ip?dagen=' + dagen + '&ip=' + encodeURIComponent(ip));
+  const cel = rij.querySelector('td');
+  if (!d.ok) { cel.innerHTML = '<div style="padding:14px 0;color:#c62828;">Kon het dossier niet laden</div>'; return; }
+
+  // Tijdlijn opdelen in bezoeken: een gat van meer dan 30 minuten is een nieuw bezoek.
+  const sessies = [];
+  let vorige = null;
+  d.stappen.forEach(st => {
+    if (!vorige || st.ms - vorige > 30 * 60 * 1000) sessies.push([]);
+    sessies[sessies.length - 1].push(st);
+    vorige = st.ms;
+  });
+  sessies.reverse();
+
+  const tijdlijn = sessies.map((sessie, i) => {
+    const eerste = sessie[0], laatste = sessie[sessie.length - 1];
+    const duur = Math.round((laatste.ms - eerste.ms) / 60000);
+    const paden = sessie.filter(x => x.soort === 'pagina').map(x => bzIpPad(x.pad));
+    const route = paden.filter((p, k) => p !== paden[k - 1]).join(' → ');
+    return `<div class="bzip-sessie">
+      <div class="bzip-sessie-kop">Bezoek ${sessies.length - i} · ${esc(bzIpTijd(eerste.ts, true))}${duur >= 1 ? ' · ' + duur + ' min' : ''}${eerste.bron ? ' · via ' + esc(eerste.bron) : ''}</div>
+      ${sessie.map(st => `<div class="bzip-stap ${st.soort}">
+          <span class="tijd">${esc(bzIpTijd(st.ts))}</span>
+          <span class="wat">${st.soort === 'pagina'
+            ? esc(bzIpPad(st.pad))
+            : '↳ ' + esc(EVENT_NAAM[st.naam] || st.naam) + (st.detail ? ': ' + esc(detailNaam({ naam: st.naam, detail: st.detail })) : '')}</span>
+        </div>`).join('')}
+      ${route ? '<div class="bzip-route">Route: ' + esc(route) + '</div>' : ''}
+    </div>`;
+  }).join('') || '<div style="color:#999;">Geen stappen in deze periode</div>';
+
+  const lijstje = (rijen, links, rechts) => rijen.length
+    ? '<ul class="bzip-lijstje">' + rijen.map(r => '<li><span>' + links(r) + '</span><span class="aantal">' + rechts(r) + '</span></li>').join('') + '</ul>'
+    : '<div style="color:#999;font-size:0.88rem;">Geen</div>';
+
+  cel.innerHTML = `
+    <div class="bzip-dossier">
+      <div class="bzip-vak breed">
+        <div class="bzip-notitie">
+          <input type="text" id="bzipn_${bzIpSleutel(ip)}" placeholder="Naam of label voor dit adres" value="${esc((d.label || {}).naam || '')}">
+          <input type="text" id="bzipo_${bzIpSleutel(ip)}" placeholder="Notitie" value="${esc((d.label || {}).notitie || '')}">
+          <span style="display:flex;gap:10px;align-items:center;white-space:nowrap;">
+            <label style="font-size:0.82rem;"><input type="checkbox" id="bzipv_${bzIpSleutel(ip)}" ${(d.label || {}).verborgen ? 'checked' : ''}> Dit ben ik zelf</label>
+            <button class="btn btn-gold btn-sm" onclick="event.stopPropagation(); bzIpBewaar('${esc(ip)}')">Bewaren</button>
+          </span>
+        </div>
+      </div>
+
+      ${(d.aanvragen || []).length ? '<div class="bzip-vak breed"><h4>Offerteaanvragen vanaf dit adres</h4>' +
+        d.aanvragen.map(a => '<div class="bzip-aanvraag"><strong>' + esc(a.naam) + '</strong> · ' + esc(a.email) +
+          (a.type ? ' · ' + esc(a.type) : '') + ' · ' + esc(bzIpTijd(a.created_at, true)) + '</div>').join('') + '</div>' : ''}
+
+      <div class="bzip-vak breed">
+        <h4>Wat deed dit adres, in volgorde${d.afgekapt ? ' (eerste 3000 stappen)' : ''}</h4>
+        ${tijdlijn}
+      </div>
+
+      <div class="bzip-vak">
+        <h4>Dagen dat dit adres langskwam (${d.perDag.length})</h4>
+        ${lijstje(d.perDag, r => esc(bzIpDag(r.dag)), r => nb(r.weergaven) + ' pagina\'s')}
+      </div>
+
+      <div class="bzip-vak">
+        <h4>Meest bekeken pagina's</h4>
+        ${lijstje(d.paginas.slice(0, 12), r => esc(bzIpPad(r.pad)), r => nb(r.aantal) + '×')}
+      </div>
+
+      <div class="bzip-vak">
+        <h4>Carrousels waarop geklikt werd</h4>
+        ${lijstje(d.carrousels, r => esc(carrouselNaam(r.detail)), r => nb(r.aantal) + '×')}
+      </div>
+
+      <div class="bzip-vak">
+        <h4>Knoppen en links</h4>
+        ${lijstje(d.knoppen, r => esc(EVENT_NAAM[r.naam] || r.naam) + (r.detail ? ' — ' + esc(detailNaam(r)) : ''), r => nb(r.aantal) + '×')}
+      </div>
+
+      ${(d.toestellen || []).length > 1 ? '<div class="bzip-vak breed"><h4>Toestellen achter dit adres (' + d.toestellen.length + ')</h4>' +
+        lijstje(d.toestellen, r => esc(r.toestel || '') + ' — <small style="color:#999;">' + esc(String(r.ua || '').slice(0, 90)) + '</small>',
+                r => esc(bzIpTijd(r.laatste_ts, true))) + '</div>' : ''}
+    </div>`;
+
+  cel.querySelectorAll('input, button, .bzip-vak').forEach(el => el.addEventListener('click', e => e.stopPropagation()));
+}
+
+async function bzIpBewaar(ip) {
+  const k = bzIpSleutel(ip);
+  const body = {
+    ip,
+    naam: document.getElementById('bzipn_' + k).value,
+    notitie: document.getElementById('bzipo_' + k).value,
+    verborgen: document.getElementById('bzipv_' + k).checked,
+  };
+  const d = await api('/admin/bezoeker-ip', { method: 'POST', body: JSON.stringify(body) });
+  if (!d.ok) { alert(d.error || 'Bewaren mislukt'); return; }
+  const b = bzIpData.find(x => x.ip === ip);
+  if (b) { b.naam = body.naam; b.notitie = body.notitie; b.verborgen = body.verborgen; }
+  bzIpTeken();
+}
+
 async function loadLogs() {
   const box = document.getElementById('logsBox');
   box.textContent = 'Laden…';
@@ -1256,7 +1546,7 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
     if (section === 'scores') await loadScores();
     if (section === 'devices') await loadDevices();
     if (section === 'logs') await loadLogs();
-    if (section === 'bezoekers') await loadBezoekers();
+    if (section === 'bezoekers') { await loadBezoekers(); await loadBezoekersIp(); }
     if (section === 'klikken') await loadKlikken();
     if (section === 'logreferrals') await loadLogReferrals(false);
   });

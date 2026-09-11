@@ -520,11 +520,14 @@ app.use(express.urlencoded({ extended: true }));
 // ═══════════════════════════════════════════════════════════════════════════
 // Telt paginaweergaven en enkele gebeurtenissen (offerteknop, formulier
 // verstuurd, WhatsApp/Messenger/telefoon/e-mail, Boek B&B) op de server.
-// Er wordt niets op het toestel van de bezoeker bewaard en er wordt geen
-// IP-adres of user-agent opgeslagen. "Unieke bezoekers" per dag komen van een
-// hash met een willekeurig dagzout dat alleen in het geheugen leeft: na
-// middernacht (of een herstart) is niets meer te herleiden. Werkt dus ook voor
-// bezoekers die de cookies weigeren. Zichtbaar in het beheerpaneel (Bezoekers).
+// Er wordt niets op het toestel van de bezoeker bewaard: geen cookies, geen
+// scripts van derden. Werkt dus ook voor wie de cookies weigert.
+// Sinds 12 september 2026 wordt het IP-adres wél bewaard, zodat het beheerpaneel
+// terugkerende bezoekers kan tonen met hun bezochte pagina's in volgorde. Die
+// gegevens staan enkel in de eigen database en zijn enkel zichtbaar achter het
+// wachtwoordscherm van het beheer (tabblad Bezoekers). De kolom "bezoeker" blijft
+// een hash met een dagzout dat alleen in het geheugen leeft en voedt de teller
+// "unieke bezoekers per dag"; die betekenis verandert niet.
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS visits (
@@ -559,11 +562,73 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_events_dag ON events(dag);
 `);
 
+// Individuele bezoekers per IP-adres (sinds 2026-09-12). De kolommen worden met
+// ALTER TABLE bijgezet, zodat een bestaande database gewoon blijft werken: oudere
+// rijen hebben ip IS NULL en tellen enkel mee in de totalen, niet in de lijst per IP.
+//   ip         het adres zoals de server het ziet (IPv6 samengevat tot /64)
+//   ms         millisecondestempel van de client; ts heeft maar secondeprecisie,
+//              waardoor een klik en een paginaweergave in dezelfde seconde anders
+//              in willekeurige volgorde staan
+//   pagina_id  willekeurige sleutel per paginaweergave, meegegeven door app.js;
+//              zo hangt een klik altijd aan de juiste pagina, ook als de beacon
+//              later aankomt of het toestel intussen van netwerk wisselde
+//   toestel_id stabiele hash van adres en browser: onderscheidt toestellen binnen
+//              één gedeeld adres (gezin, kantoor, mobiel netwerk)
+// Het adres van waaraf een offerteaanvraag verstuurd werd, zodat een dossier een naam krijgt.
+if (!db.prepare('PRAGMA table_info(contacts)').all().some(k => k.name === 'ip')) db.exec('ALTER TABLE contacts ADD COLUMN ip TEXT');
+
+for (const tabel of ['visits', 'events']) {
+  const bestaand = db.prepare('PRAGMA table_info(' + tabel + ')').all().map(k => k.name);
+  for (const [kolom, type] of [['ip', 'TEXT'], ['ms', 'INTEGER'], ['pagina_id', 'TEXT'], ['toestel_id', 'TEXT']]) {
+    if (!bestaand.includes(kolom)) db.exec('ALTER TABLE ' + tabel + ' ADD COLUMN ' + kolom + ' ' + type);
+  }
+}
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_visits_ip ON visits(ip, ts);
+  CREATE INDEX IF NOT EXISTS idx_events_ip ON events(ip, ts);
+
+  -- Wat de beheerder zelf over een adres noteert, plus de omgekeerde DNS-naam.
+  CREATE TABLE IF NOT EXISTS bezoeker_ip (
+    ip TEXT PRIMARY KEY,
+    naam TEXT,
+    notitie TEXT,
+    verborgen INTEGER DEFAULT 0,
+    hostnaam TEXT,
+    hostnaam_ts DATETIME
+  );
+
+  -- Eén rij per toestel: de browserreeks staat hier één keer in plaats van bij elke weergave.
+  CREATE TABLE IF NOT EXISTS stats_toestellen (
+    toestel_id TEXT PRIMARY KEY,
+    ip TEXT,
+    ua TEXT,
+    toestel TEXT,
+    eerste_ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    laatste_ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    js INTEGER DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS idx_toestellen_ip ON stats_toestellen(ip);
+
+  -- Vaste geheimen van de statistiek (blijven over een herstart heen bestaan).
+  CREATE TABLE IF NOT EXISTS stats_geheim (sleutel TEXT PRIMARY KEY, waarde TEXT);
+`);
+
 // Bewaartermijn: 400 dagen (een jaar plus wat marge om jaar op jaar te vergelijken).
-try {
-  db.prepare("DELETE FROM visits WHERE ts < datetime('now', '-400 days')").run();
-  db.prepare("DELETE FROM events WHERE ts < datetime('now', '-400 days')").run();
-} catch (e) { console.warn('[stats] Opruimen mislukt:', e.message); }
+// Draait bij het opstarten en daarna elke 24 uur: een server die maanden doordraait
+// ruimde vroeger nooit op.
+function statsOpruimen() {
+  try {
+    db.prepare("DELETE FROM visits WHERE ts < datetime('now', '-400 days')").run();
+    db.prepare("DELETE FROM events WHERE ts < datetime('now', '-400 days')").run();
+    db.prepare("DELETE FROM stats_toestellen WHERE laatste_ts < datetime('now', '-400 days')").run();
+    // Adressen zonder notitie of naam waarvan geen enkel bezoek meer bestaat.
+    db.prepare(`DELETE FROM bezoeker_ip WHERE verborgen = 0 AND COALESCE(naam, '') = '' AND COALESCE(notitie, '') = ''
+                AND ip NOT IN (SELECT DISTINCT ip FROM visits WHERE ip IS NOT NULL)`).run();
+  } catch (e) { console.warn('[stats] Opruimen mislukt:', e.message); }
+}
+statsOpruimen();
+setInterval(statsOpruimen, 24 * 60 * 60 * 1000).unref();
 
 const STATS_EIGEN_HOSTS = new Set(['walbrugge.be', 'www.walbrugge.be', '2.28.71.249', 'localhost', '127.0.0.1']);
 const STATS_BOT = /bot|crawl|spider|slurp|preview|monitor|fetch|scan|curl|wget|python|java\/|headless|lighthouse|pingdom|uptime|facebookexternalhit|whatsapp|telegrambot|linkedinbot|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|ccbot/i;
@@ -573,14 +638,72 @@ function statsDag() {
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Brussels' });
 }
 
-// Dagzout: willekeurig, alleen in het geheugen, wisselt elke dag.
+// Het adres van de bezoeker. Bewust req.ip en niet x-forwarded-for[0]: die eerste
+// waarde mag de bezoeker zelf meesturen, terwijl Caddy het echte adres achteraan
+// toevoegt. Met "trust proxy = 1" (zie hierboven) geeft Express precies dat adres.
+// IPv6 wordt samengevat tot het /64-net: de laatste helft van zo'n adres wisselt bij
+// de meeste toestellen dagelijks, waardoor dezelfde bezoeker anders elke dag nieuw lijkt.
+function statsIp(req) {
+  let ip = String((req && req.ip) || '').trim();
+  if (!ip) return null;
+  if (ip.startsWith('::ffff:')) ip = ip.slice(7);            // IPv4 in een IPv6-jasje
+  ip = ip.split('%')[0];                                      // zone-aanduiding weg
+  if (ip.indexOf(':') < 0) return ip.slice(0, 45);            // IPv4
+  // IPv6 volledig uitschrijven en daarna op /64 afkappen.
+  const [voor, na] = ip.split('::');
+  const a = voor ? voor.split(':').filter(Boolean) : [];
+  const b = na !== undefined ? (na ? na.split(':').filter(Boolean) : []) : null;
+  let groepen;
+  if (b === null) groepen = a;
+  else groepen = a.concat(Array(Math.max(0, 8 - a.length - b.length)).fill('0'), b);
+  if (groepen.length < 4) groepen = groepen.concat(Array(4 - groepen.length).fill('0'));
+  return groepen.slice(0, 4).map(g => g.replace(/^0+(?=.)/, '')).join(':') + '::/64';
+}
+
+// Eigen en lokale adressen tellen niet mee (testen, gezondheidscontroles van de server).
+function statsEigenIp(ip) {
+  return !ip || ip === '::1' || ip === '0:0:0:0::/64' || /^127\./.test(ip) || /^(10\.|192\.168\.|169\.254\.)/.test(ip)
+    || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip);
+}
+
+// Browsers halen pagina's soms vooraf op; dat is geen bezoek.
+function statsIsPrefetch(req) {
+  const p = String(req.get('sec-purpose') || req.get('purpose') || req.get('x-purpose') || '').toLowerCase();
+  return p.includes('prefetch') || p.includes('preview');
+}
+
+// Vast geheim in de database: blijft dezelfde over herstarts heen, zodat een toestel
+// herkenbaar blijft. Het staat los van het dagzout hieronder.
+const statsVastGeheim = (() => {
+  const rij = db.prepare("SELECT waarde FROM stats_geheim WHERE sleutel = 'toestel'").get();
+  if (rij && rij.waarde) return rij.waarde;
+  const nieuw = crypto.randomBytes(32).toString('hex');
+  db.prepare("INSERT INTO stats_geheim (sleutel, waarde) VALUES ('toestel', ?)").run(nieuw);
+  return nieuw;
+})();
+
+// Toestelsleutel: onderscheidt browsers binnen hetzelfde adres, blijft stabiel over dagen heen.
+function statsToestelId(req, ip) {
+  return crypto.createHash('sha256')
+    .update(statsVastGeheim + '|' + (ip || '') + '|' + String(req.headers['user-agent'] || ''))
+    .digest('hex').slice(0, 12);
+}
+
+const statsToestelZet = db.prepare(`
+  INSERT INTO stats_toestellen (toestel_id, ip, ua, toestel, eerste_ts, laatste_ts, js)
+  VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)
+  ON CONFLICT(toestel_id) DO UPDATE SET laatste_ts = CURRENT_TIMESTAMP, ip = excluded.ip,
+    js = MAX(stats_toestellen.js, excluded.js)`);
+
+// Dagzout voor de bestaande kolom "bezoeker": willekeurig, enkel in het geheugen,
+// wisselt elke dag. Die kolom voedt de teller "unieke bezoekers per dag" en blijft
+// dus precies doen wat ze deed.
 let statsZout = { dag: '', waarde: '' };
 function statsBezoeker(req) {
   const dag = statsDag();
   if (statsZout.dag !== dag) statsZout = { dag, waarde: crypto.randomBytes(16).toString('hex') };
-  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || '';
   const ua = String(req.headers['user-agent'] || '');
-  return crypto.createHash('sha256').update(statsZout.waarde + '|' + ip + '|' + ua).digest('hex').slice(0, 16);
+  return crypto.createHash('sha256').update(statsZout.waarde + '|' + (statsIp(req) || '') + '|' + ua).digest('hex').slice(0, 16);
 }
 
 function statsIsBot(req) {
@@ -661,11 +784,23 @@ function statsKort(v, n) {
 }
 
 const statsInsertVisit = db.prepare(`
-  INSERT INTO visits (dag, pad, taal, bron, utm_source, utm_medium, utm_campaign, toestel, bezoeker)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  INSERT INTO visits (dag, pad, taal, bron, utm_source, utm_medium, utm_campaign, toestel, bezoeker, ip, ms, pagina_id, toestel_id)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 const statsInsertEvent = db.prepare(`
-  INSERT INTO events (dag, naam, pad, taal, bron, utm_source, utm_medium, utm_campaign, detail, bezoeker)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  INSERT INTO events (dag, naam, pad, taal, bron, utm_source, utm_medium, utm_campaign, detail, bezoeker, ip, ms, pagina_id, toestel_id)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+// Millisecondestempel van de client, maar alleen als hij geloofwaardig is.
+function statsMs(waarde) {
+  const m = parseInt(waarde, 10);
+  if (!m || !isFinite(m)) return Date.now();
+  const nu = Date.now();
+  // Meldingen komen binnen seconden aan. Wijkt de klok van de bezoeker meer dan vijf
+  // minuten af, dan is ze niet te vertrouwen en houden we de tijd van de server aan;
+  // anders zou zo'n klok de volgorde van de tijdlijn omgooien.
+  return Math.abs(nu - m) > 300000 ? nu : m;
+}
+const statsPaginaId = v => (/^[a-z0-9]{4,24}$/i.test(String(v || '')) ? String(v) : null);
 
 // Paginaweergaven: alles wat als HTML met status 200 vertrekt, behalve het
 // beheer en de inlog-/gastenpagina's.
@@ -684,20 +819,32 @@ app.use((req, res, next) => {
         statsInsertEvent.run(
           statsDag(), 'oude_url', statsKort(pad, 200), 'nl', statsBron(req.get('referer'), req.get('host'), req.headers['user-agent']),
           statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
-          statsKort(OUDE_URLS[req.route.path], 120), statsBezoeker(req)
+          statsKort(OUDE_URLS[req.route.path], 120), statsBezoeker(req),
+          statsIp(req), Date.now(), null, statsToestelId(req, statsIp(req))
         );
         return;
       }
 
-      if (res.statusCode !== 200) return;
-      if (!String(res.getHeader('content-type') || '').includes('text/html')) return;
-      if (/^\/(api|admin|gasten|login)(\/|$)/.test(pad) || /^\/(fr|en|de)\/login$/.test(pad)) return;
+      // 304 telt ook mee: een terugkerende bezoeker krijgt van express.static een
+      // "niet gewijzigd" terug, en die bezoeken vielen vroeger volledig uit de telling.
+      // Bij een 304 stuurt Express geen content-type mee, dus leiden we uit het pad af
+      // of het om een pagina gaat.
+      const isPagina = String(res.getHeader('content-type') || '').includes('text/html')
+        || (res.statusCode === 304 && !/\.[a-z0-9]{2,5}$/i.test(pad));
+      if (res.statusCode !== 200 && res.statusCode !== 304) return;
+      if (!isPagina) return;
+      if (/^\/(api|admin|gasten|login|media)(\/|$)/.test(pad) || /^\/(fr|en|de)\/login$/.test(pad)) return;
       if (/^\/google[0-9a-f]+\.html$/.test(pad)) return; // Search Console-verificatie
-      if (statsIsBot(req)) return;
+      if (statsIsBot(req) || statsIsPrefetch(req)) return;
+      const bezoekIp = statsIp(req);
+      if (statsEigenIp(bezoekIp)) return;
+      const bezoekToestel = statsToestelId(req, bezoekIp);
+      try { statsToestelZet.run(bezoekToestel, bezoekIp, statsKort(req.headers['user-agent'], 300), statsToestel(req), 0); } catch (e) { /* stil */ }
       statsInsertVisit.run(
         statsDag(), statsKort(pad, 200), statsTaal(pad), statsBron(req.get('referer'), req.get('host'), req.headers['user-agent']),
         statsKort(req.query.utm_source), statsKort(req.query.utm_medium), statsKort(req.query.utm_campaign),
-        statsToestel(req), statsBezoeker(req)
+        statsToestel(req), statsBezoeker(req),
+        bezoekIp, Date.now(), statsPaginaId(req.query.pid), bezoekToestel
       );
     } catch (e) { /* statistiek mag nooit een pagina breken */ }
   });
@@ -714,11 +861,18 @@ app.post('/api/telling', (req, res) => {
     const naam = String(b.naam || '');
     if (!STATS_EVENTS.has(naam)) return;
     const pad = statsKort(b.pad, 200) || '/';
+    const klikIp = statsIp(req);
+    if (statsEigenIp(klikIp)) return;
+    const klikToestel = statsToestelId(req, klikIp);
+    // js = 1: dit toestel voert JavaScript uit. Een adres dat tientallen pagina's
+    // opvraagt maar nooit een gebeurtenis stuurt, is vrijwel zeker een robot.
+    try { statsToestelZet.run(klikToestel, klikIp, statsKort(req.headers['user-agent'], 300), statsToestel(req), 1); } catch (e) { /* stil */ }
     statsInsertEvent.run(
       statsDag(), naam, pad, statsTaal(pad),
       statsBron(b.ref, req.get('host'), req.headers['user-agent']),
       statsKort(b.utm_source), statsKort(b.utm_medium), statsKort(b.utm_campaign),
-      statsKort(b.detail, 120), statsBezoeker(req)
+      statsKort(b.detail, 120), statsBezoeker(req),
+      klikIp, statsMs(b.ms), statsPaginaId(b.pid), klikToestel
     );
   } catch (e) { /* stil */ }
 });
@@ -800,6 +954,188 @@ app.get('/api/admin/bezoekers', authMiddleware('admin'), (req, res) => {
   const awardWeergaven = all(`SELECT ${PAGINA_ZONDER_TAAL} AS pagina, COUNT(*) AS weergaven FROM visits ${w} GROUP BY pagina`, van, tot);
 
   res.json({ ok: true, periode: { van, tot, dagen }, totaal, events, perDag, bronnen, paginas, campagnes, talen, toestellen, eventsDetail, zalen, carrousels, awards, awardWeergaven });
+});
+
+// ── Individuele bezoekers per IP-adres ──────────────────────────────────────
+// Lijst met één regel per adres; het dossier met de volledige tijdlijn zit in een
+// tweede endpoint, zodat de lijst licht blijft.
+
+// Omgekeerde DNS: "81.82.13.44" zegt niets, "dyn.telenet.be" of een bedrijfsnaam wel.
+// Wordt op de achtergrond opgezocht en bewaard; de lijst wacht er nooit op.
+const dnsOmgekeerd = require('dns').promises.reverse;
+const bezoekerNaamZet = db.prepare(`
+  INSERT INTO bezoeker_ip (ip, hostnaam, hostnaam_ts) VALUES (?, ?, CURRENT_TIMESTAMP)
+  ON CONFLICT(ip) DO UPDATE SET hostnaam = excluded.hostnaam, hostnaam_ts = excluded.hostnaam_ts`);
+const dnsBezig = new Set();
+function dnsOpzoeken(ip) {
+  if (!ip || dnsBezig.has(ip) || ip.includes('/')) return;   // IPv6-net kan niet opgezocht worden
+  dnsBezig.add(ip);
+  dnsOmgekeerd(ip)
+    .then(namen => bezoekerNaamZet.run(ip, statsKort(namen && namen[0], 200) || ''))
+    .catch(() => { try { bezoekerNaamZet.run(ip, ''); } catch (e) { /* stil */ } })
+    .finally(() => dnsBezig.delete(ip));
+}
+
+function bezoekerPeriode(req) {
+  const dagen = Math.min(Math.max(parseInt(req.query.dagen, 10) || 30, 1), 400);
+  return {
+    dagen,
+    van: new Date(Date.now() - (dagen - 1) * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/Brussels' }),
+    tot: statsDag(),
+  };
+}
+
+app.get('/api/admin/bezoekers-ip', authMiddleware('admin'), (req, res) => {
+  const { dagen, van, tot } = bezoekerPeriode(req);
+  const all = (sql, ...p) => db.prepare(sql).all(...p);
+
+  const rijen = all(`
+    SELECT ip,
+           COUNT(*) AS weergaven,
+           COUNT(DISTINCT dag) AS dagen,
+           COUNT(DISTINCT toestel_id) AS toestellen,
+           COUNT(DISTINCT pad) AS paginas,
+           MIN(ts) AS eerste,
+           MAX(ts) AS laatste
+    FROM visits WHERE ip IS NOT NULL AND dag >= ? AND dag <= ?
+    GROUP BY ip ORDER BY MAX(ts) DESC LIMIT 500`, van, tot);
+
+  const perIp = new Map(rijen.map(r => [r.ip, { ...r, klikken: 0, leads: 0, gebeurtenissen: {} }]));
+
+  all(`SELECT ip, naam, COUNT(*) AS n FROM events
+       WHERE ip IS NOT NULL AND dag >= ? AND dag <= ? GROUP BY ip, naam`, van, tot)
+    .forEach(r => {
+      const b = perIp.get(r.ip);
+      if (!b) return;
+      b.gebeurtenissen[r.naam] = r.n;
+      b.klikken += r.n;
+      if (r.naam === 'generate_lead') b.leads += r.n;
+    });
+
+  // De eerste bron die niet leeg is: wie de eerste keer rechtstreeks binnenkwam en
+  // later via Facebook, mag niet voor altijd "rechtstreeks" blijven.
+  all(`SELECT ip, bron, MIN(ts) AS t FROM visits
+       WHERE ip IS NOT NULL AND bron IS NOT NULL AND bron != '' AND dag >= ? AND dag <= ?
+       GROUP BY ip, bron`, van, tot)
+    .forEach(r => {
+      const b = perIp.get(r.ip);
+      if (!b) return;
+      if (!b.eersteBron || r.t < b.eersteBronTs) { b.eersteBron = r.bron; b.eersteBronTs = r.t; }
+    });
+
+  all(`SELECT ip, MIN(ts) AS t, pad FROM visits
+       WHERE ip IS NOT NULL AND dag >= ? AND dag <= ? GROUP BY ip`, van, tot)
+    .forEach(r => { const b = perIp.get(r.ip); if (b) b.landing = r.pad; });
+
+  // Toestellen, browsers en de vraag of dit adres ooit JavaScript uitvoerde.
+  const toestelInfo = {};
+  all('SELECT ip, ua, toestel, js FROM stats_toestellen WHERE ip IS NOT NULL')
+    .forEach(r => {
+      const t = toestelInfo[r.ip] || (toestelInfo[r.ip] = { js: 0, soorten: new Set(), uas: [] });
+      t.js = Math.max(t.js, r.js || 0);
+      if (r.toestel) t.soorten.add(r.toestel);
+      if (r.ua) t.uas.push(r.ua);
+    });
+
+  const labels = {};
+  db.prepare('SELECT * FROM bezoeker_ip').all().forEach(r => { labels[r.ip] = r; });
+
+  // Naamloze adressen op de achtergrond opzoeken, hoogstens een handvol per keer.
+  let opgezocht = 0;
+  for (const r of rijen) {
+    if (opgezocht >= 12) break;
+    if (labels[r.ip] && labels[r.ip].hostnaam !== null && labels[r.ip].hostnaam !== undefined) continue;
+    dnsOpzoeken(r.ip); opgezocht++;
+  }
+
+  const bezoekers = [...perIp.values()].map(b => {
+    const t = toestelInfo[b.ip] || { js: 0, soorten: new Set(), uas: [] };
+    const label = labels[b.ip] || {};
+    const minuten = (new Date(b.laatste + 'Z') - new Date(b.eerste + 'Z')) / 60000;
+    return {
+      ip: b.ip,
+      naam: label.naam || null,
+      notitie: label.notitie || null,
+      verborgen: !!label.verborgen,
+      hostnaam: label.hostnaam || null,
+      dagen: b.dagen,
+      weergaven: b.weergaven,
+      paginas: b.paginas,
+      toestellen: b.toestellen,
+      klikken: b.klikken,
+      leads: b.leads,
+      gebeurtenissen: b.gebeurtenissen,
+      eerste: b.eerste,
+      laatste: b.laatste,
+      landing: b.landing || null,
+      bron: b.eersteBron || null,
+      soort: [...t.soorten].join(' + ') || null,
+      js: !!t.js,
+      // Geen enkele gebeurtenis ooit terwijl er wel veel pagina's opgevraagd zijn:
+      // dat patroon hoort bij robots die door de user-agentfilter glippen.
+      botverdacht: !t.js && b.weergaven >= 8,
+      snel: minuten >= 0 && b.weergaven >= 15 && minuten < 3,
+    };
+  });
+
+  const zonderIp = db.prepare('SELECT COUNT(*) AS n FROM visits WHERE ip IS NULL AND dag >= ? AND dag <= ?').get(van, tot).n;
+  const sinds = db.prepare('SELECT MIN(dag) AS d FROM visits WHERE ip IS NOT NULL').get().d;
+
+  res.json({ ok: true, periode: { van, tot, dagen }, bezoekers, zonderIp, sinds, afgekapt: rijen.length >= 500 });
+});
+
+// Dossier van één adres: alles wat dat adres deed, in volgorde.
+app.get('/api/admin/bezoeker-ip', authMiddleware('admin'), (req, res) => {
+  const ip = String(req.query.ip || '');
+  if (!ip) return res.status(400).json({ ok: false, error: 'Geen adres opgegeven' });
+  const { dagen, van, tot } = bezoekerPeriode(req);
+  const all = (sql, ...p) => db.prepare(sql).all(...p);
+
+  // Paginaweergaven en klikken samen in één tijdlijn. COALESCE(ms, ...) zet oudere
+  // rijen zonder millisecondestempel terug op hun ts, zodat ze niet vooraan springen.
+  const stappen = all(`
+    SELECT 'pagina' AS soort, ts, COALESCE(ms, strftime('%s', ts) * 1000) AS ms, dag, pad, taal, bron, toestel_id,
+           NULL AS naam, NULL AS detail, toestel
+    FROM visits WHERE ip = ? AND dag >= ? AND dag <= ?
+    UNION ALL
+    SELECT 'klik' AS soort, ts, COALESCE(ms, strftime('%s', ts) * 1000) AS ms, dag, pad, taal, bron, toestel_id,
+           naam, detail, NULL AS toestel
+    FROM events WHERE ip = ? AND dag >= ? AND dag <= ?
+    ORDER BY ms ASC, ts ASC LIMIT 3000`, ip, van, tot, ip, van, tot);
+
+  const toestellen = all('SELECT toestel_id, ua, toestel, eerste_ts, laatste_ts, js FROM stats_toestellen WHERE ip = ? ORDER BY laatste_ts DESC', ip);
+  const label = db.prepare('SELECT * FROM bezoeker_ip WHERE ip = ?').get(ip) || {};
+
+  const perDag = all(`SELECT dag, COUNT(*) AS weergaven FROM visits WHERE ip = ? AND dag >= ? AND dag <= ?
+                      GROUP BY dag ORDER BY dag DESC`, ip, van, tot);
+  const paginas = all(`SELECT pad, COUNT(*) AS aantal, MAX(ts) AS laatste FROM visits WHERE ip = ? AND dag >= ? AND dag <= ?
+                       GROUP BY pad ORDER BY aantal DESC`, ip, van, tot);
+  const carrousels = all(`SELECT detail, COUNT(*) AS aantal FROM events
+                          WHERE ip = ? AND naam = 'carrousel' AND dag >= ? AND dag <= ?
+                          GROUP BY detail ORDER BY aantal DESC`, ip, van, tot);
+  const knoppen = all(`SELECT naam, COALESCE(detail, '') AS detail, COUNT(*) AS aantal FROM events
+                       WHERE ip = ? AND naam != 'carrousel' AND dag >= ? AND dag <= ?
+                       GROUP BY naam, detail ORDER BY aantal DESC`, ip, van, tot);
+
+  // Offerteaanvragen die vanaf dit adres verstuurd werden.
+  let aanvragen = [];
+  try {
+    aanvragen = all('SELECT id, naam, email, type, datum, created_at FROM contacts WHERE ip = ? ORDER BY created_at DESC LIMIT 20', ip);
+  } catch (e) { /* kolom bestaat nog niet */ }
+
+  res.json({ ok: true, ip, periode: { van, tot, dagen }, label, stappen, toestellen, perDag, paginas, carrousels, knoppen, aanvragen,
+             afgekapt: stappen.length >= 3000 });
+});
+
+// Naam, notitie en "dit ben ik zelf" bewaren.
+app.post('/api/admin/bezoeker-ip', authMiddleware('admin'), (req, res) => {
+  const ip = String((req.body || {}).ip || '');
+  if (!ip) return res.status(400).json({ ok: false, error: 'Geen adres opgegeven' });
+  const b = req.body || {};
+  db.prepare(`INSERT INTO bezoeker_ip (ip, naam, notitie, verborgen) VALUES (?, ?, ?, ?)
+              ON CONFLICT(ip) DO UPDATE SET naam = excluded.naam, notitie = excluded.notitie, verborgen = excluded.verborgen`)
+    .run(ip, statsKort(b.naam, 80), statsKort(b.notitie, 500), b.verborgen ? 1 : 0);
+  res.json({ ok: true, label: db.prepare('SELECT * FROM bezoeker_ip WHERE ip = ?').get(ip) });
 });
 
 
@@ -1541,7 +1877,8 @@ app.get('/api/admin/logs', authMiddleware('admin'), (req, res) => {
 // Caddyfile) en telt per verwijzer en per user-agent. Ook de geroteerde
 // bestanden (walbrugge-<datum>.log en .log.gz) worden meegelezen, zodat er zo
 // veel mogelijk geschiedenis in zit. Alleen HTML-pagina's tellen mee, geen
-// afbeeldingen of scripts. IP-adressen worden niet gelezen en niet bewaard.
+// afbeeldingen of scripts. Deze lezer gebruikt zelf geen IP-adressen; de
+// bezoekersopvolging per adres zit in het tabblad Bezoekers.
 
 const CADDY_LOG = process.env.CADDY_LOG || '/var/log/caddy/walbrugge.log';
 const REFERRALS_MAX_BYTES = 600 * 1024 * 1024;   // bovengrens aan gelezen logdata
@@ -1781,9 +2118,9 @@ app.post('/api/contact', contactBegrenzer, (req, res) => {
   
   try {
     db.prepare(`
-      INSERT INTO contacts (naam, email, telefoon, bedrijf, type, personen, datum, formule, bericht)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(naam, email, telefoon || null, bedrijf || null, type || null, personen || null, datum || null, formule || null, bericht || null);
+      INSERT INTO contacts (naam, email, telefoon, bedrijf, type, personen, datum, formule, bericht, ip)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(naam, email, telefoon || null, bedrijf || null, type || null, personen || null, datum || null, formule || null, bericht || null, statsIp(req));
     
     console.log(`New contact: ${naam} <${email}> - ${type}`);
     
